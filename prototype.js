@@ -8,6 +8,7 @@
   const searchTrigger = document.querySelector("#searchTrigger");
   const searchOverlay = document.querySelector("#searchOverlay");
   const searchInput = document.querySelector("#searchInput");
+  const searchClose = document.querySelector("#searchClose");
   const searchResults = document.querySelector("#searchResults");
   const statusBar = document.querySelector("#statusBar");
   const statusPct = document.querySelector("#statusPct");
@@ -22,6 +23,10 @@
   let sectionObserver = null;
 
   function setDrawer(open) {
+    const returnFocus = mobileNavigation.matches
+      && sidebar.classList.contains("open")
+      && sidebar.contains(document.activeElement)
+      && !open;
     const expanded = Boolean(open && mobileNavigation.matches);
     sidebar.classList.toggle("open", expanded);
     mobileOverlay.classList.toggle("open", expanded);
@@ -29,6 +34,7 @@
     mobileOverlay.setAttribute("aria-hidden", String(!expanded));
     mobileMenuButton.setAttribute("aria-expanded", String(expanded));
     mobileMenuButton.setAttribute("aria-label", expanded ? "Close navigation" : "Open navigation");
+    if (returnFocus) mobileMenuButton.focus();
     syncSidebarInert();
   }
 
@@ -78,7 +84,10 @@
         statusSectionTop.textContent = label;
 
         localNav?.querySelectorAll("a").forEach((link) => {
-          link.classList.toggle("active", link.getAttribute("href") === `#${section.id}`);
+          const current = link.getAttribute("href") === `#${section.id}`;
+          link.classList.toggle("active", current);
+          if (current) link.setAttribute("aria-current", "location");
+          else link.removeAttribute("aria-current");
         });
       },
       {
@@ -103,6 +112,73 @@
     statusBar.innerHTML = "▓".repeat(filled) + `<span class="bar-empty">${"░".repeat(empty)}</span>`;
     statusPct.textContent = `${pct}%`;
     tokenDisplay.innerHTML = `<span class="arrow">down</span> ${tokenText} tokens`;
+  }
+
+  function setupCitations() {
+    const citations = [...activePrototype.querySelectorAll("[data-citation]")];
+    const total = citations.length;
+
+    citations.forEach((citation, index) => {
+      const number = index + 1;
+      const position = `Citation ${number} of ${total}`;
+      citation.textContent = String(number);
+      citation.setAttribute("aria-label", position);
+      citation.title = position;
+    });
+  }
+
+  function drawMonotonicGuides() {
+    document.querySelectorAll(".monotonic-result-curve").forEach((chart) => {
+      let overlay = chart.querySelector(".monotonic-guide-overlay");
+      if (!overlay) {
+        overlay = document.createElement("div");
+        overlay.className = "monotonic-guide-overlay";
+        overlay.setAttribute("aria-hidden", "true");
+        chart.append(overlay);
+      }
+
+      overlay.replaceChildren();
+      const overlayRect = overlay.getBoundingClientRect();
+      const bars = [...chart.querySelectorAll(".curve-column i")]
+        .map((bar) => bar.getBoundingClientRect());
+
+      const addSegment = (x, y, width, angle = 0) => {
+        const segment = document.createElement("i");
+        segment.className = "monotonic-guide-segment";
+        segment.style.left = `${x}px`;
+        segment.style.top = `${y}px`;
+        segment.style.width = `${width}px`;
+        segment.style.transform = `rotate(${angle}deg)`;
+        overlay.append(segment);
+      };
+
+      bars.forEach((bar, index) => {
+        const left = bar.left - overlayRect.left;
+        const top = bar.top - overlayRect.top;
+        addSegment(left, top, bar.width);
+
+        const next = bars[index + 1];
+        if (!next) return;
+        const startX = bar.right - overlayRect.left;
+        const startY = top;
+        const endX = next.left - overlayRect.left;
+        const endY = next.top - overlayRect.top;
+        const deltaX = endX - startX;
+        const deltaY = endY - startY;
+        addSegment(
+          startX,
+          startY,
+          Math.hypot(deltaX, deltaY),
+          Math.atan2(deltaY, deltaX) * 180 / Math.PI
+        );
+      });
+    });
+  }
+
+  let monotonicGuideFrame = 0;
+  function scheduleMonotonicGuides() {
+    window.cancelAnimationFrame(monotonicGuideFrame);
+    monotonicGuideFrame = window.requestAnimationFrame(drawMonotonicGuides);
   }
 
   function updateThemeButton() {
@@ -176,6 +252,26 @@
     searchReturnTarget = null;
   }
 
+  function trapSearchFocus(event) {
+    if (event.key !== "Tab" || !searchOverlay.classList.contains("open")) return;
+    const focusable = [searchInput, searchClose, ...searchResults.querySelectorAll("a[href]")]
+      .filter((element) => !element.hidden && element.getClientRects().length > 0);
+    if (!focusable.length) return;
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    } else if (!searchOverlay.contains(document.activeElement)) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
   function renderSearchResults(query) {
     const normalized = query.trim().toLowerCase();
     const hits = trackedSections.filter((section) => {
@@ -193,9 +289,17 @@
       title.className = "sr-title";
       title.textContent = section.dataset.navLabel;
       description.className = "sr-desc";
-      description.textContent = section.querySelector("h1, h2")?.textContent || "Section";
+      const bodyText = section.querySelector(".editorial-copy p")?.textContent
+        ?.replace(/\s+/g, " ")
+        .trim();
+      description.textContent = bodyText && bodyText !== title.textContent
+        ? `${bodyText.slice(0, 120)}${bodyText.length > 120 ? "…" : ""}`
+        : "Open section";
       link.append(title, description);
-      link.addEventListener("click", () => closeSearch());
+      link.addEventListener("click", () => {
+        closeSearch();
+        setDrawer(false);
+      });
       searchResults.append(link);
     });
   }
@@ -209,10 +313,13 @@
   });
   sidebarToggle.addEventListener("click", () => {
     const collapsed = document.body.classList.toggle("sidebar-collapsed");
-    localStorage.setItem("sidebar-collapsed", collapsed ? "1" : "0");
+    try {
+      localStorage.setItem("sidebar-collapsed", collapsed ? "1" : "0");
+    } catch (error) {}
     updateSidebarToggleState();
   });
   searchTrigger.addEventListener("click", openSearch);
+  searchClose.addEventListener("click", () => closeSearch());
   searchOverlay.addEventListener("click", (event) => {
     if (event.target === searchOverlay) closeSearch();
   });
@@ -220,8 +327,14 @@
   mobileNavigation.addEventListener?.("change", syncMobileNavigation);
   themeToggle.addEventListener("click", toggleTheme);
   window.addEventListener("scroll", updateProgress, { passive: true });
-  window.addEventListener("resize", updateProgress, { passive: true });
+  window.addEventListener("resize", () => {
+    updateProgress();
+    scheduleMonotonicGuides();
+  }, { passive: true });
+  window.addEventListener("load", scheduleMonotonicGuides, { once: true });
   document.addEventListener("keydown", (event) => {
+    trapSearchFocus(event);
+
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
       event.preventDefault();
       if (searchOverlay.classList.contains("open")) closeSearch();
@@ -234,14 +347,18 @@
     }
   });
 
-  if (localStorage.getItem("sidebar-collapsed") === "1") {
-    document.body.classList.add("sidebar-collapsed");
-  }
+  try {
+    if (localStorage.getItem("sidebar-collapsed") === "1") {
+      document.body.classList.add("sidebar-collapsed");
+    }
+  } catch (error) {}
   updateThemeButton();
   updateSidebarToggleState();
   syncMobileNavigation();
   document.title = "Incoherent Values? — MINT Research Lab";
+  setupCitations();
   rebuildNav();
   setupSectionObserver();
   updateProgress();
+  scheduleMonotonicGuides();
 })();
