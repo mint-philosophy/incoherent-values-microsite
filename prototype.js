@@ -127,58 +127,66 @@
     });
   }
 
-  function drawMonotonicGuides() {
-    document.querySelectorAll(".monotonic-result-curve").forEach((chart) => {
-      let overlay = chart.querySelector(".monotonic-guide-overlay");
+  function drawCurveGuides() {
+    document.querySelectorAll(".monotonic-result-curve, .incoherence-result-curve").forEach((chart) => {
+      let overlay = chart.querySelector(".curve-guide-overlay");
       if (!overlay) {
         overlay = document.createElement("div");
-        overlay.className = "monotonic-guide-overlay";
+        overlay.className = "curve-guide-overlay";
         overlay.setAttribute("aria-hidden", "true");
         chart.append(overlay);
       }
 
       overlay.replaceChildren();
       const overlayRect = overlay.getBoundingClientRect();
-      const bars = [...chart.querySelectorAll(".curve-column i")]
-        .map((bar) => bar.getBoundingClientRect());
+      const bars = [...chart.querySelectorAll(".curve-column")]
+        .map((column) => ({
+          color: getComputedStyle(column).getPropertyValue("--bar-color").trim() || "var(--blue)",
+          rect: column.querySelector("i").getBoundingClientRect()
+        }));
 
-      const addSegment = (x, y, width, angle = 0) => {
+      const addSegment = (x, y, width, angle = 0, color = "var(--blue)") => {
         const segment = document.createElement("i");
-        segment.className = "monotonic-guide-segment";
+        segment.className = "curve-guide-segment";
         segment.style.left = `${x}px`;
         segment.style.top = `${y}px`;
         segment.style.width = `${width}px`;
         segment.style.transform = `rotate(${angle}deg)`;
+        segment.style.setProperty("--guide-color", color);
         overlay.append(segment);
       };
 
-      bars.forEach((bar, index) => {
+      bars.forEach(({ color, rect: bar }, index) => {
         const left = bar.left - overlayRect.left;
         const top = bar.top - overlayRect.top;
-        addSegment(left, top, bar.width);
+        addSegment(left, top, bar.width, 0, color);
 
         const next = bars[index + 1];
         if (!next) return;
         const startX = bar.right - overlayRect.left;
         const startY = top;
-        const endX = next.left - overlayRect.left;
-        const endY = next.top - overlayRect.top;
+        const endX = next.rect.left - overlayRect.left;
+        const endY = next.rect.top - overlayRect.top;
         const deltaX = endX - startX;
         const deltaY = endY - startY;
+        const connectorColor = chart.classList.contains("incoherence-result-curve") && endY > startY + 0.5
+          ? "var(--red)"
+          : "var(--blue)";
         addSegment(
           startX,
           startY,
           Math.hypot(deltaX, deltaY),
-          Math.atan2(deltaY, deltaX) * 180 / Math.PI
+          Math.atan2(deltaY, deltaX) * 180 / Math.PI,
+          connectorColor
         );
       });
     });
   }
 
-  let monotonicGuideFrame = 0;
-  function scheduleMonotonicGuides() {
-    window.cancelAnimationFrame(monotonicGuideFrame);
-    monotonicGuideFrame = window.requestAnimationFrame(drawMonotonicGuides);
+  let curveGuideFrame = 0;
+  function scheduleCurveGuides() {
+    window.cancelAnimationFrame(curveGuideFrame);
+    curveGuideFrame = window.requestAnimationFrame(drawCurveGuides);
   }
 
   function updateThemeButton() {
@@ -329,9 +337,9 @@
   window.addEventListener("scroll", updateProgress, { passive: true });
   window.addEventListener("resize", () => {
     updateProgress();
-    scheduleMonotonicGuides();
+    scheduleCurveGuides();
   }, { passive: true });
-  window.addEventListener("load", scheduleMonotonicGuides, { once: true });
+  window.addEventListener("load", scheduleCurveGuides, { once: true });
   document.addEventListener("keydown", (event) => {
     trapSearchFocus(event);
 
@@ -360,5 +368,5 @@
   rebuildNav();
   setupSectionObserver();
   updateProgress();
-  scheduleMonotonicGuides();
+  scheduleCurveGuides();
 })();

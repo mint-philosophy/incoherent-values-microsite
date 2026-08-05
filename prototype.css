@@ -5648,11 +5648,12 @@ nav.sidebar::after {
   grid-template-rows: 1fr 18px;
 }
 
-.monotonic-result-curve .curve-column::after {
+.monotonic-result-curve .curve-column::after,
+.incoherence-result-curve .curve-column::after {
   content: none;
 }
 
-.monotonic-guide-overlay {
+.curve-guide-overlay {
   position: absolute;
   inset: 0;
   z-index: 2;
@@ -5660,10 +5661,10 @@ nav.sidebar::after {
   pointer-events: none;
 }
 
-.monotonic-guide-segment {
+.curve-guide-segment {
   position: absolute;
   height: 0;
-  border-top: 1px dashed color-mix(in srgb, var(--blue) 82%, transparent);
+  border-top: 1px dashed color-mix(in srgb, var(--guide-color, var(--blue)) 82%, transparent);
   transform-origin: 0 0;
 }
 
@@ -5697,17 +5698,6 @@ nav.sidebar::after {
   position: relative;
   z-index: 1;
   background: var(--bar-color);
-}
-
-.incoherence-result-curve .curve-column::after {
-  content: "";
-  position: absolute;
-  right: -4px;
-  bottom: calc(18px + (var(--value) * 0.9%));
-  left: -4px;
-  z-index: 2;
-  border-top: 1px dashed color-mix(in srgb, var(--bar-color) 78%, transparent);
-  pointer-events: none;
 }
 
 .incoherence-result-curve .curve-column b {
