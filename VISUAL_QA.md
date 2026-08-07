@@ -59,6 +59,8 @@ animation without hiding information.
 - [x] Previous/Next buttons, Home/End, arrow/page keys, touch swipes, and Escape
   from presentation mode are wired; arrow navigation is automated with focus in
   both the surrounding shell and the deck iframe.
+- [x] A fresh visit starts in light theme in both the shell and deck; switching
+  to dark and back updates both surfaces and the remembered preference.
 - [x] The external-link runtime exposes nine link instances backed by five
   explicitly approved config entries; every target returned HTTP 200.
 - [x] Pretext 0.0.8 loads, waits for fonts, lays out 31 eligible text blocks, and

@@ -30,6 +30,11 @@ in `index.html` as well. Dense material should be split into another slide rathe
 than made unreadably small. The fitting engine recalculates after fonts, Pretext,
 theme, frame, and viewport changes.
 
+The shell and standalone deck default to the light theme. The theme control can
+switch to dark, and that explicit choice is remembered in `localStorage` under
+`mint-theme` with the `mint-theme-explicit` marker. An absent marker resolves to
+light and clears the old automatically stored dark default.
+
 Body prose follows one logical type contract in `deck.css`: Newsreader at a fixed
 size and leading, with Pretext responsible for line placement and the slide fitter
 responsible for uniform whole-slide scaling. Do not add breakpoint-specific prose

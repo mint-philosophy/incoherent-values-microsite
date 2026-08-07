@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,8 +14,11 @@
   <link rel="stylesheet" href="presentation-shell.css?v=20260807-shell">
   <script>
     try {
-      if (localStorage.getItem("mint-theme") === "light") {
-        document.documentElement.setAttribute("data-theme", "light");
+      const hasExplicitTheme = localStorage.getItem("mint-theme-explicit") === "true";
+      const savedTheme = hasExplicitTheme ? localStorage.getItem("mint-theme") : null;
+      if (!hasExplicitTheme) localStorage.removeItem("mint-theme");
+      if (savedTheme === "dark") {
+        document.documentElement.removeAttribute("data-theme");
       }
     } catch (error) {}
 
@@ -45,7 +48,7 @@
   </script>
   <script src="https://mintresearch.org/assets/mint-site-nav.v1.js" defer></script>
   <script src="https://mintresearch.org/assets/mint-banner.js" defer></script>
-  <script src="presentation-shell.js?v=20260807.4" defer></script>
+  <script src="presentation-shell.js?v=20260807.5" defer></script>
 </head>
 <body class="presentation-shell-page" data-presentation-title="Incoherent Values?">
   <a class="skip-link" href="#top">Skip to content</a>
@@ -102,7 +105,7 @@
       </button>
     </div>
     <div class="presentation-stage">
-      <iframe id="presentationFrame" class="presentation-frame" src="deck.html?v=20260807.4" title="Incoherent Values? presentation" allowfullscreen></iframe>
+      <iframe id="presentationFrame" class="presentation-frame" src="deck.html?v=20260807.5" title="Incoherent Values? presentation" allowfullscreen></iframe>
     </div>
   </main>
 
@@ -111,8 +114,8 @@
       <span class="statusline-site">mintresearch.org</span>
       <span class="statusline-section" id="statusSectionTop">top</span>
       <button class="theme-toggle" id="themeToggle" type="button"
-              aria-label="Switch to light mode" title="Switch to light mode">
-        <span class="theme-toggle-icon">☀</span>light
+              aria-label="Switch to dark mode" title="Switch to dark mode">
+        <span class="theme-toggle-icon">☾</span>dark
       </button>
     </div>
     <div class="statusline-row statusline-row-bottom">

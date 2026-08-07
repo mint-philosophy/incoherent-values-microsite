@@ -185,6 +185,13 @@ async function verifyViewport(browser, baseUrl, viewport) {
 
   try {
     await page.goto(`${baseUrl}/#c-results`, { waitUntil: 'networkidle' });
+    if (viewport.name === 'ultrawide') {
+      await page.evaluate(() => {
+        localStorage.setItem('mint-theme', 'dark');
+        localStorage.removeItem('mint-theme-explicit');
+      });
+      await page.reload({ waitUntil: 'networkidle' });
+    }
     const frame = page.frames().find((candidate) => candidate.url().includes('/deck.html'));
     assert(frame, `${viewport.name}: deck iframe was not loaded`);
     const result = await diagnostics(frame);
@@ -295,14 +302,35 @@ async function verifyViewport(browser, baseUrl, viewport) {
     assert(pretextUsage.renderedLines >= pretextUsage.managedBlocks, `${viewport.name}: Pretext did not emit line spans`);
     assert.deepEqual(pretextUsage.incomplete, [], `${viewport.name}: Pretext output is incomplete`);
 
+    assert.equal(
+      await page.evaluate(() => document.documentElement.getAttribute('data-theme')),
+      'light',
+      `${viewport.name}: site did not default to light theme`
+    );
+    assert.equal(
+      await frame.evaluate(() => document.documentElement.getAttribute('data-theme')),
+      'light',
+      `${viewport.name}: deck did not inherit the light default`
+    );
+    assert.equal(await page.locator('#themeToggle').getAttribute('aria-label'), 'Switch to dark mode');
+    assert.equal(await page.evaluate(() => localStorage.getItem('mint-theme')), null);
+
+    await page.evaluate(() => document.getElementById('themeToggle').click());
+    await page.waitForFunction(() => !document.documentElement.hasAttribute('data-theme'));
+    await page.waitForTimeout(300);
+    const darkResult = await diagnostics(frame);
+    assert.deepEqual(darkResult.slides.filter((slide) => !slide.fits), [], `${viewport.name}: dark-theme slide overflow`);
+    assert.equal(await frame.evaluate(() => document.documentElement.hasAttribute('data-theme')), false);
+    assert.equal(await page.evaluate(() => localStorage.getItem('mint-theme')), 'dark');
+    assert.equal(await page.evaluate(() => localStorage.getItem('mint-theme-explicit')), 'true');
+
     await page.evaluate(() => document.getElementById('themeToggle').click());
     await page.waitForFunction(() => document.documentElement.getAttribute('data-theme') === 'light');
     await page.waitForTimeout(300);
     const lightResult = await diagnostics(frame);
     assert.deepEqual(lightResult.slides.filter((slide) => !slide.fits), [], `${viewport.name}: light-theme slide overflow`);
     assert.equal(await frame.evaluate(() => document.documentElement.getAttribute('data-theme')), 'light');
-    await page.evaluate(() => document.getElementById('themeToggle').click());
-    await page.waitForFunction(() => !document.documentElement.hasAttribute('data-theme'));
+    assert.equal(await page.evaluate(() => localStorage.getItem('mint-theme')), 'light');
 
     if (viewport.width > 900) {
       await page.locator('#sidebarToggle').click();

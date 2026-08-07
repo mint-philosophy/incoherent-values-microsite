@@ -178,7 +178,7 @@
     }
   }
 
-  function applyTheme(theme) {
+  function applyTheme(theme, persist = false) {
     const isLight = theme === 'light';
     if (isLight) document.documentElement.setAttribute('data-theme', 'light');
     else document.documentElement.removeAttribute('data-theme');
@@ -189,10 +189,13 @@
       themeToggle.title = label;
     }
     postToDeck({ type: 'mint-theme', theme });
-    try {
-      localStorage.setItem('mint-theme', theme);
-    } catch (error) {
-      // Storage may be disabled; the current page still updates.
+    if (persist) {
+      try {
+        localStorage.setItem('mint-theme', theme);
+        localStorage.setItem('mint-theme-explicit', 'true');
+      } catch (error) {
+        // Storage may be disabled; the current page still updates.
+      }
     }
   }
 
@@ -215,7 +218,7 @@
   });
 
   themeToggle?.addEventListener('click', () => {
-    applyTheme(document.documentElement.hasAttribute('data-theme') ? 'dark' : 'light');
+    applyTheme(document.documentElement.hasAttribute('data-theme') ? 'dark' : 'light', true);
   });
 
   document.addEventListener('click', (event) => {
