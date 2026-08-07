@@ -87,6 +87,14 @@
     postToDeck({ type: 'mint-deck-go', id, focus: focusDeck });
   }
 
+  function navigationCommandForKey(key) {
+    if (key === 'ArrowRight' || key === 'ArrowDown' || key === 'PageDown' || key === ' ') return 'next';
+    if (key === 'ArrowLeft' || key === 'ArrowUp' || key === 'PageUp') return 'previous';
+    if (key === 'Home') return 'first';
+    if (key === 'End') return 'last';
+    return null;
+  }
+
   function setPresentationMode(enabled) {
     body.classList.toggle('presentation-mode', enabled);
     presentationToggle?.setAttribute('aria-pressed', String(enabled));
@@ -225,6 +233,17 @@
     if ((event.metaKey || event.ctrlKey) && event.key.toLocaleLowerCase() === 'k') {
       event.preventDefault();
       setSearchOpen(true);
+      return;
+    }
+    const target = event.target instanceof Element ? event.target : null;
+    const isEditing = target?.closest('input, textarea, select, [contenteditable="true"]');
+    const isButtonActivation = event.key === ' ' && target?.closest('a, button');
+    const navigationCommand = event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || isEditing || isButtonActivation
+      ? null
+      : navigationCommandForKey(event.key);
+    if (navigationCommand) {
+      event.preventDefault();
+      postToDeck({ type: 'mint-deck-navigate', command: navigationCommand });
       return;
     }
     if (event.key === 'Escape') {

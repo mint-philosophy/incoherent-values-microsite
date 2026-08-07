@@ -55,12 +55,13 @@ npm run qa
 ```
 
 The suite validates the HTML, starts its own local server, and uses headless
-Chrome. It checks all ten
-slides in framed and presentation modes at desktop, ultrawide, tablet, portrait
-phone, and landscape phone sizes. It also checks Pretext activation, structured
-links, direct hashes, Previous/Next and keyboard navigation, theme changes,
+Chrome. It checks all ten slides in framed and presentation modes at desktop,
+ultrawide, tablet, intermediate portrait, portrait-phone, and landscape-phone
+sizes. It also checks Pretext-generated line output, structured links, direct
+hashes, Previous/Next and shell/deck keyboard navigation, theme changes,
 sidebar/drawer states, reduced motion, animation reversibility, text overflow,
-comparison-panel containment, and model-chart label collisions.
+comparison-panel containment, model-results composition, and chart-label
+collisions.
 
 See `VISUAL_QA.md` and `PUBLICATION_CHECKLIST.md` for the current review record.
 

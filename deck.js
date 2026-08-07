@@ -436,6 +436,23 @@ function previousSlide() {
   showSlide(state.index - 1, { focus: true });
 }
 
+function runNavigationCommand(command) {
+  if (command === 'next') nextSlide();
+  else if (command === 'previous') previousSlide();
+  else if (command === 'first') showSlide(0, { focus: true });
+  else if (command === 'last') showSlide(slides.length - 1, { focus: true });
+  else return false;
+  return true;
+}
+
+function navigationCommandForKey(key) {
+  if (key === 'ArrowRight' || key === 'ArrowDown' || key === 'PageDown' || key === ' ') return 'next';
+  if (key === 'ArrowLeft' || key === 'ArrowUp' || key === 'PageUp') return 'previous';
+  if (key === 'Home') return 'first';
+  if (key === 'End') return 'last';
+  return null;
+}
+
 function isInteractiveTarget(target) {
   return Boolean(target.closest('a, button, input, textarea, select, [contenteditable="true"]'));
 }
@@ -454,18 +471,12 @@ document.addEventListener('keydown', (event) => {
   if (isInteractiveTarget(event.target)) return;
   if (event.key === 'Escape' && window.parent !== window) {
     window.parent.postMessage({ type: 'mint-presentation-exit' }, window.location.origin);
-  } else if (event.key === 'ArrowRight' || event.key === 'PageDown' || event.key === ' ') {
+    return;
+  }
+  const command = navigationCommandForKey(event.key);
+  if (command) {
     event.preventDefault();
-    nextSlide();
-  } else if (event.key === 'ArrowLeft' || event.key === 'PageUp') {
-    event.preventDefault();
-    previousSlide();
-  } else if (event.key === 'Home') {
-    event.preventDefault();
-    showSlide(0, { focus: true });
-  } else if (event.key === 'End') {
-    event.preventDefault();
-    showSlide(slides.length - 1, { focus: true });
+    runNavigationCommand(command);
   }
 });
 
@@ -490,6 +501,8 @@ window.addEventListener('message', (event) => {
   if (event.origin !== window.location.origin) return;
   if (event.data?.type === 'mint-deck-go') {
     goToId(event.data.id, { focus: Boolean(event.data.focus) });
+  } else if (event.data?.type === 'mint-deck-navigate') {
+    runNavigationCommand(event.data.command);
   } else if (event.data?.type === 'mint-presentation-resize') {
     scheduleFit();
   } else if (event.data?.type === 'mint-theme') {

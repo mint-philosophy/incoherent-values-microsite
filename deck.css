@@ -271,6 +271,11 @@ body.deck-page {
   grid-template-columns: minmax(0, 1fr);
 }
 
+.results-model-slide .slide-plane {
+  grid-template-rows: auto auto;
+  align-content: start;
+}
+
 .ladder-method-slide .editorial-copy {
   width: min(900px, 100%);
   justify-self: center;
@@ -666,7 +671,6 @@ body.deck-page {
   .ladder-method-slide .slide-plane,
   .ladder-example-slide .slide-plane,
   .results-example-slide .slide-plane,
-  .results-model-slide .slide-plane,
   .links-slide .slide-plane {
     grid-template-rows: auto minmax(0, 1fr);
   }

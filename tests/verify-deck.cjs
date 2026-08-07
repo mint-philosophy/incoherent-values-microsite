@@ -13,6 +13,7 @@ const VIEWPORTS = [
   { name: 'laptop', width: 1366, height: 768 },
   { name: 'tablet', width: 820, height: 1180 },
   { name: 'medium-portrait', width: 622, height: 800 },
+  { name: 'medium-portrait-wide', width: 637, height: 800 },
   { name: 'phone', width: 390, height: 844 },
   { name: 'small-phone', width: 360, height: 640 },
   { name: 'phone-landscape', width: 844, height: 390 },
@@ -71,9 +72,36 @@ async function diagnostics(frame) {
     const result = window.__deckDiagnostics;
     return result?.ready
       && result.pretext.status !== 'loading'
+      && (result.pretext.status !== 'ready' || result.pretext.layoutRuns > 0)
       && result.config.status !== 'loading';
   });
   return frame.evaluate(() => window.__deckDiagnostics);
+}
+
+async function resultsModelLayoutIssues(frame) {
+  return frame.evaluate(() => {
+    const heading = document.querySelector('#c-results-models .editorial-section-heading')?.getBoundingClientRect();
+    const story = document.querySelector('#c-results-models .results-model-story')?.getBoundingClientRect();
+    const copy = document.querySelector('#c-results-models .results-summary-copy')?.getBoundingClientRect();
+    const chart = document.querySelector('#c-results-models .strict-mono-card')?.getBoundingClientRect();
+    if (!heading || !story || !copy || !chart) return ['model-results elements are missing'];
+
+    const within = (child, parent) => child.left >= parent.left - 0.5
+      && child.right <= parent.right + 0.5
+      && child.top >= parent.top - 0.5
+      && child.bottom <= parent.bottom + 0.5;
+    const overlaps = (first, second) => !(first.right <= second.left + 0.5
+      || second.right <= first.left + 0.5
+      || first.bottom <= second.top + 0.5
+      || second.bottom <= first.top + 0.5);
+
+    const issues = [];
+    if (overlaps(heading, story)) issues.push('content overlaps slide heading');
+    if (!within(copy, story)) issues.push('summary escapes content grid');
+    if (!within(chart, story)) issues.push('chart escapes content grid');
+    if (overlaps(copy, chart)) issues.push('summary overlaps chart');
+    return issues;
+  });
 }
 
 async function comparisonLayoutIssues(frame) {
@@ -119,6 +147,7 @@ async function verifyViewport(browser, baseUrl, viewport) {
     assert.equal(result.slideCount, 10, `${viewport.name}: unexpected slide count`);
     assert.equal(result.pretext.status, 'ready', `${viewport.name}: Pretext did not load`);
     assert(result.pretext.managedBlocks >= 20, `${viewport.name}: too few Pretext-managed blocks`);
+    assert(result.pretext.layoutRuns > 0, `${viewport.name}: Pretext did not perform layout`);
     assert.equal(result.config.status, 'ready', `${viewport.name}: paper config did not load`);
     assert.equal(result.config.approvedLinks, 5, `${viewport.name}: approved link count changed`);
     assert.deepEqual(result.slides.filter((slide) => !slide.fits), [], `${viewport.name}: framed slide overflow`);
@@ -149,8 +178,23 @@ async function verifyViewport(browser, baseUrl, viewport) {
     assert.equal(outer.hash, '#c-results', `${viewport.name}: direct hash did not persist`);
 
     assert.equal(await frame.locator('#deckCounter').textContent(), '7 / 10');
+    await page.locator('#presentationModeToggle').focus();
+    await page.keyboard.press('ArrowRight');
+    await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '8 / 10');
+    await page.keyboard.press('ArrowLeft');
+    await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '7 / 10');
+    await frame.locator('#deck').focus();
+    await page.keyboard.press('ArrowRight');
+    await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '8 / 10');
+    await page.keyboard.press('ArrowLeft');
+    await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '7 / 10');
     await frame.locator('#deckNext').click();
     assert.equal(await frame.locator('#deckCounter').textContent(), '8 / 10');
+    assert.deepEqual(
+      await resultsModelLayoutIssues(frame),
+      [],
+      `${viewport.name}: framed model-results layout collision`
+    );
     const rowOverlaps = await frame.locator('.active .strict-mono-row').evaluateAll((rows) => {
       const overlaps = (first, second) => !(
         first.right <= second.left + 0.5
@@ -189,6 +233,17 @@ async function verifyViewport(browser, baseUrl, viewport) {
         .map((element) => `${element.closest('.editorial-slide')?.id}: ${element.textContent.trim()}`)
     ));
     assert.deepEqual(pretextOverflow, [], `${viewport.name}: Pretext-managed text overflow`);
+    const pretextUsage = await frame.locator('.pretext-managed').evaluateAll((elements) => ({
+      managedBlocks: elements.length,
+      renderedLines: elements.reduce((total, element) => total + element.querySelectorAll(':scope > .pt-line').length, 0),
+      incomplete: elements.filter((element) => (
+        element.querySelectorAll(':scope > .pt-line').length === 0
+        || element.textContent.trim() !== element.dataset.pretextText
+      )).map((element) => element.dataset.pretextText)
+    }));
+    assert.equal(pretextUsage.managedBlocks, result.pretext.managedBlocks, `${viewport.name}: Pretext block count drifted`);
+    assert(pretextUsage.renderedLines >= pretextUsage.managedBlocks, `${viewport.name}: Pretext did not emit line spans`);
+    assert.deepEqual(pretextUsage.incomplete, [], `${viewport.name}: Pretext output is incomplete`);
 
     await page.evaluate(() => document.getElementById('themeToggle').click());
     await page.waitForFunction(() => document.documentElement.getAttribute('data-theme') === 'light');
@@ -293,6 +348,13 @@ async function verifyViewport(browser, baseUrl, viewport) {
       await comparisonLayoutIssues(frame),
       [],
       `${viewport.name}: presentation comparison layout collision`
+    );
+    await frame.evaluate(() => window.postMessage({ type: 'mint-deck-go', id: 'c-results-models' }, location.origin));
+    await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '8 / 10');
+    assert.deepEqual(
+      await resultsModelLayoutIssues(frame),
+      [],
+      `${viewport.name}: presentation model-results layout collision`
     );
 
     await frame.locator('body').press('Escape');

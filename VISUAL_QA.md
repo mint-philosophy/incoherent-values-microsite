@@ -19,7 +19,7 @@ closed and open drawer, plus a full scroll to its final link.
 | 844x390 | Landscape | [x] | [x] | [x] | [x] | [x] | [x] |
 
 Additional passing viewports: `2560x1080`, `1366x768`, `820x1180`,
-`622x800`, `360x640`, and `667x375`.
+`622x800`, `637x800`, `360x640`, and `667x375`.
 
 The minimum fitted scale across the matrix is `0.595` in the framed `360x640`
 case. All other tested cases fit at a larger scale. The QA script rejects any
@@ -51,11 +51,13 @@ animation without hiding information.
 - [x] Sidebar collapse, mobile drawer, local anchors, direct hashes, and frame
   resize messages work.
 - [x] Previous/Next buttons, Home/End, arrow/page keys, touch swipes, and Escape
-  from presentation mode are wired; button clicks and Home/End are automated.
+  from presentation mode are wired; arrow navigation is automated with focus in
+  both the surrounding shell and the deck iframe.
 - [x] The external-link runtime exposes nine link instances backed by five
   explicitly approved config entries; every target returned HTTP 200.
-- [x] Pretext 0.0.8 loads, waits for fonts, and lays out 31 eligible text blocks;
-  the native fallback retains readable content when the module is unavailable.
+- [x] Pretext 0.0.8 loads, waits for fonts, lays out 31 eligible text blocks, and
+  emits complete `.pt-line` spans whose text matches each source block; the
+  native fallback retains readable content when the module is unavailable.
 - [x] The banner, sidebar, slide frame, controls, charts, and prose were visually
   inspected in representative desktop, portrait-phone, landscape-phone, and
   presentation-mode screenshots.
