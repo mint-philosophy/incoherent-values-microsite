@@ -41,6 +41,10 @@ responsible for uniform whole-slide scaling. Do not add breakpoint-specific pros
 sizes. On the model-results slide, `data-finding-label` supplies the JetBrains Mono
 labels for the evenly ruled summary rows.
 
+The coherence explanation is four actual paragraphs rather than a mixture of
+paragraphs and manual line breaks. Its `data-coherence-icon` values select the
+small pixel-art bullets; all four rows use the same `22px` type, padding, and rules.
+
 The MINT banner and global sitemap are loaded from `mintresearch.org`. This repo
 keeps a local adaptation of the current presentation shell because the shared
 shell JavaScript contains root-relative main-site routes that do not resolve

@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="prototype.css?v=20260807-deck">
-  <link rel="stylesheet" href="deck.css?v=20260807.5">
-  <script type="module" src="deck.js?v=20260807.5"></script>
+  <link rel="stylesheet" href="deck.css?v=20260807.6">
+  <script type="module" src="deck.js?v=20260807.6"></script>
 </head>
 <body class="deck-page">
   <a class="skip-link" href="#c-title-slide">Skip to slides</a>
@@ -106,9 +106,10 @@
           <p class="cycle-warning"><strong>This would be incoherent</strong><span>A<sup>+</sup> &gt; A &gt; B &gt; A<sup>+</sup></span></p>
         </div>
         <div class="editorial-copy coherence-forced-choice-copy">
-          <p>We give LLMs many forced choices between two options. The more valued option in a pair is the one that the LLM chooses more often.</p>
-          <p>Values should be coherent.<br>Imagine that you value A<sup>+</sup> over A, because A<sup>+</sup> has more of what makes A valuable. Then imagine that you value A over B.</p>
-          <p>To be coherent, you'd need to value A<sup>+</sup> over B. If you value B over A<sup>+</sup> instead, then your values are <em>incoherent</em>, forming a cycle. This is the kind of incoherence that we tested for.</p>
+          <p data-coherence-icon="choice">We give LLMs many forced choices between two options.</p>
+          <p data-coherence-icon="measure">The more valued option in a pair is the one that the LLM chooses more often.</p>
+          <p data-coherence-icon="order">Values should be coherent: if A⁺ has more of what makes A valuable, and A is valued over B, then A⁺ should be valued over B.</p>
+          <p data-coherence-icon="cycle">If the model values B over A⁺ instead, its preferences form an incoherent cycle. This is the kind of incoherence we tested for.</p>
         </div>
       </section>
 

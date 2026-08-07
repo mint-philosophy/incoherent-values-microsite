@@ -192,9 +192,12 @@ body.deck-page {
 
 .pt-line {
   display: block;
+  white-space: nowrap;
 }
 
 .pretext-managed {
+  min-width: 0;
+  max-width: 100%;
   width: 100%;
 }
 
@@ -268,8 +271,61 @@ body.deck-page {
   align-self: center;
 }
 
-.coherence-forced-choice-copy {
-  align-self: center;
+.prototype-c .coherence-forced-choice-copy {
+  align-self: start;
+  gap: 0;
+  border-top: 1px solid var(--border-strong);
+  font-size: 22px;
+}
+
+.coherence-forced-choice-copy > p:not(.eyebrow) {
+  position: relative;
+  min-height: 54px;
+  padding: 11px 0 11px 56px;
+  border-bottom: 1px solid var(--border);
+}
+
+.coherence-forced-choice-copy > p::before {
+  content: "";
+  position: absolute;
+  top: 11px;
+  left: 0;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  background-color: color-mix(in srgb, var(--bg-0) 82%, var(--accent) 18%);
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.coherence-forced-choice-copy > p[data-coherence-icon="choice"]::before {
+  background-image:
+    url("assets/preference-cycle-options/generated-v2/coin-small/coin-small-03-32.png"),
+    url("assets/preference-cycle-options/generated-v2/ice-cream/ice-cream-01-32.png");
+  background-position: left 1px center, right 1px center;
+  background-size: 23px 23px, 23px 23px;
+}
+
+.coherence-forced-choice-copy > p[data-coherence-icon="measure"]::before {
+  background-image: url("assets/minty-teal.png");
+  background-position: center;
+  background-size: 25px auto;
+}
+
+.coherence-forced-choice-copy > p[data-coherence-icon="order"]::before {
+  background-image: url("assets/preference-cycle-options/generated-v2/coin-large/coin-large-03-32.png");
+  background-position: center;
+  background-size: 32px 32px;
+}
+
+.coherence-forced-choice-copy > p[data-coherence-icon="cycle"]::before {
+  background-image:
+    url("assets/preference-cycle-options/generated-v2/coin-large/coin-large-03-32.png"),
+    url("assets/preference-cycle-options/generated-v2/coin-small/coin-small-03-32.png"),
+    url("assets/preference-cycle-options/generated-v2/ice-cream/ice-cream-01-32.png");
+  background-position: center 2px, left 4px bottom 3px, right 4px bottom 3px;
+  background-size: 17px 17px, 17px 17px, 17px 17px;
 }
 
 .ladder-method-slide .slide-plane,
@@ -696,7 +752,18 @@ body.deck-page {
   }
 
   .coherence-cycle-diagram {
-    min-height: 380px;
+    min-height: 300px;
+  }
+
+  .prototype-c .coherence-forced-choice-copy > p:not(.eyebrow) {
+    min-height: 48px;
+    padding: 8px 0 8px 50px;
+  }
+
+  .coherence-forced-choice-copy > p::before {
+    top: 5px;
+    width: 36px;
+    height: 36px;
   }
 
   .cycle-node-a {
@@ -866,6 +933,18 @@ body.deck-page {
     font-size: 24px;
   }
 
+  .prototype-c .coherence-forced-choice-copy > p:not(.eyebrow) {
+    min-height: 44px;
+    padding: 5px 0 5px 48px;
+    line-height: 1.28;
+  }
+
+  .coherence-forced-choice-copy > p::before {
+    top: 2px;
+    width: 34px;
+    height: 34px;
+  }
+
   .coherence-cycle-diagram {
     min-height: 0;
   }
@@ -1013,6 +1092,23 @@ body.deck-page {
     height: 1px;
     overflow: hidden;
     clip: rect(0, 0, 0, 0);
+  }
+}
+
+@media (max-width: 900px) and (max-aspect-ratio: 4 / 3) {
+  .prototype-c #c-coherence .slide-plane {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+    align-content: start;
+  }
+
+  .coherence-cycle-diagram {
+    height: 300px;
+    align-self: start;
+  }
+
+  .prototype-c .coherence-forced-choice-copy {
+    align-self: start;
   }
 }
 

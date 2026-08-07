@@ -15,6 +15,7 @@ const VIEWPORTS = [
   { name: 'medium-portrait', width: 622, height: 800 },
   { name: 'medium-portrait-wide', width: 637, height: 800 },
   { name: 'compact-square', width: 628, height: 633 },
+  { name: 'compact-short', width: 631, height: 543 },
   { name: 'phone', width: 390, height: 844 },
   { name: 'small-phone', width: 360, height: 640 },
   { name: 'phone-landscape', width: 844, height: 390 },
@@ -129,6 +130,65 @@ async function resultsSummaryTypographyIssues(frame) {
     const paddingTop = pixelValue(styles[0].paddingTop);
     const paddingBottom = pixelValue(styles[0].paddingBottom);
     styles.forEach((style, index) => {
+      if (!nearlyEqual(pixelValue(style.fontSize), fontSize)) issues.push(`row ${index + 1} font size differs`);
+      if (!nearlyEqual(pixelValue(style.lineHeight), lineHeight)) issues.push(`row ${index + 1} line height differs`);
+      if (!nearlyEqual(pixelValue(style.marginTop), 0) || !nearlyEqual(pixelValue(style.marginBottom), 0)) {
+        issues.push(`row ${index + 1} has inherited margins`);
+      }
+      if (!nearlyEqual(pixelValue(style.paddingTop), paddingTop)
+        || !nearlyEqual(pixelValue(style.paddingBottom), paddingBottom)) {
+        issues.push(`row ${index + 1} vertical padding differs`);
+      }
+    });
+
+    for (let index = 1; index < rects.length; index += 1) {
+      if (!nearlyEqual(rects[index].top, rects[index - 1].bottom, 1)) {
+        issues.push(`row ${index + 1} does not meet the preceding rule`);
+      }
+    }
+    return issues;
+  });
+}
+
+async function coherenceCopyIssues(frame) {
+  return frame.evaluate(() => {
+    const slide = document.querySelector('#c-coherence');
+    const plane = slide?.querySelector('.slide-plane');
+    const heading = slide?.querySelector('.editorial-section-heading')?.getBoundingClientRect();
+    const diagram = slide?.querySelector('.coherence-cycle-diagram')?.getBoundingClientRect();
+    const copy = slide?.querySelector('.coherence-forced-choice-copy');
+    const copyRect = copy?.getBoundingClientRect();
+    const rows = copy ? Array.from(copy.children) : [];
+    if (!slide || !plane || !heading || !diagram || !copy || !copyRect || rows.length !== 4) {
+      return ['coherence slide elements or four copy rows are missing'];
+    }
+
+    const issues = [];
+    const expectedIcons = ['choice', 'measure', 'order', 'cycle'];
+    const styles = rows.map((row) => getComputedStyle(row));
+    const rects = rows.map((row) => row.getBoundingClientRect());
+    const pixelValue = (value) => Number.parseFloat(value) || 0;
+    const nearlyEqual = (first, second, tolerance = 0.1) => Math.abs(first - second) <= tolerance;
+    const overlaps = (first, second) => !(first.right <= second.left + 0.5
+      || second.right <= first.left + 0.5
+      || first.bottom <= second.top + 0.5
+      || second.bottom <= first.top + 0.5);
+
+    if (overlaps(heading, diagram) || overlaps(heading, copyRect)) issues.push('coherence content overlaps its heading');
+    if (overlaps(diagram, copyRect)) issues.push('coherence copy overlaps the diagram');
+    if (!nearlyEqual(pixelValue(getComputedStyle(copy).rowGap), 0)) issues.push('coherence rows use an arbitrary grid gap');
+
+    const fontSize = pixelValue(styles[0].fontSize);
+    const lineHeight = pixelValue(styles[0].lineHeight);
+    const paddingTop = pixelValue(styles[0].paddingTop);
+    const paddingBottom = pixelValue(styles[0].paddingBottom);
+    if (!nearlyEqual(fontSize, 22)) issues.push(`coherence prose is ${fontSize}px instead of 22px`);
+
+    rows.forEach((row, index) => {
+      const style = styles[index];
+      if (row.dataset.coherenceIcon !== expectedIcons[index]) issues.push(`row ${index + 1} icon changed`);
+      if (getComputedStyle(row, '::before').backgroundImage === 'none') issues.push(`row ${index + 1} icon is missing`);
+      if (!row.classList.contains('pretext-managed')) issues.push(`row ${index + 1} is not managed by Pretext`);
       if (!nearlyEqual(pixelValue(style.fontSize), fontSize)) issues.push(`row ${index + 1} font size differs`);
       if (!nearlyEqual(pixelValue(style.lineHeight), lineHeight)) issues.push(`row ${index + 1} line height differs`);
       if (!nearlyEqual(pixelValue(style.marginTop), 0) || !nearlyEqual(pixelValue(style.marginBottom), 0)) {
@@ -296,11 +356,26 @@ async function verifyViewport(browser, baseUrl, viewport) {
       incomplete: elements.filter((element) => (
         element.querySelectorAll(':scope > .pt-line').length === 0
         || element.textContent.trim() !== element.dataset.pretextText
-      )).map((element) => element.dataset.pretextText)
+      )).map((element) => element.dataset.pretextText),
+      rewrappedLines: elements.flatMap((element) => (
+        Array.from(element.querySelectorAll(':scope > .pt-line')).flatMap((line) => {
+          const range = document.createRange();
+          range.selectNodeContents(line);
+          return range.getClientRects().length > 1 ? [line.textContent] : [];
+        })
+      ))
     }));
     assert.equal(pretextUsage.managedBlocks, result.pretext.managedBlocks, `${viewport.name}: Pretext block count drifted`);
     assert(pretextUsage.renderedLines >= pretextUsage.managedBlocks, `${viewport.name}: Pretext did not emit line spans`);
     assert.deepEqual(pretextUsage.incomplete, [], `${viewport.name}: Pretext output is incomplete`);
+    assert.deepEqual(pretextUsage.rewrappedLines, [], `${viewport.name}: Pretext lines wrapped again in the DOM`);
+    await frame.evaluate(() => window.postMessage({ type: 'mint-deck-go', id: 'c-coherence' }, location.origin));
+    await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '3 / 10');
+    assert.deepEqual(
+      await coherenceCopyIssues(frame),
+      [],
+      `${viewport.name}: framed coherence-copy layout drift`
+    );
 
     assert.equal(
       await page.evaluate(() => document.documentElement.getAttribute('data-theme')),
@@ -438,6 +513,13 @@ async function verifyViewport(browser, baseUrl, viewport) {
       await resultsSummaryTypographyIssues(frame),
       [],
       `${viewport.name}: presentation model-results typography drift`
+    );
+    await frame.evaluate(() => window.postMessage({ type: 'mint-deck-go', id: 'c-coherence' }, location.origin));
+    await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '3 / 10');
+    assert.deepEqual(
+      await coherenceCopyIssues(frame),
+      [],
+      `${viewport.name}: presentation coherence-copy layout drift`
     );
 
     await frame.locator('body').press('Escape');

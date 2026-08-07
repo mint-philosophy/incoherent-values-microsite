@@ -19,7 +19,7 @@ closed and open drawer, plus a full scroll to its final link.
 | 844x390 | Landscape | [x] | [x] | [x] | [x] | [x] | [x] |
 
 Additional passing viewports: `2560x1080`, `1366x768`, `820x1180`,
-`622x800`, `637x800`, `628x633`, `360x640`, and `667x375`.
+`622x800`, `637x800`, `628x633`, `631x543`, `360x640`, and `667x375`.
 
 The minimum fitted scale across the matrix is `0.570` in the framed `360x640`
 case. All other tested cases fit at a larger scale. The QA script rejects any
@@ -33,6 +33,10 @@ breakpoints. Pretext places the lines, then the fitter scales the complete slide
 The model-results summary uses three evenly ruled rows with JetBrains Mono labels;
 the suite verifies equal font size, leading, margins, padding, and row spacing in
 both framed and presentation modes.
+
+The coherence explanation is tested as four Pretext-managed, evenly ruled rows
+with equal type, leading, margins, padding, and visible pixel-art bullets. Its
+diagram, heading, and copy must remain collision-free at every viewport.
 
 ## Motion and animation matrix
 
@@ -63,9 +67,10 @@ animation without hiding information.
   to dark and back updates both surfaces and the remembered preference.
 - [x] The external-link runtime exposes nine link instances backed by five
   explicitly approved config entries; every target returned HTTP 200.
-- [x] Pretext 0.0.8 loads, waits for fonts, lays out 31 eligible text blocks, and
+- [x] Pretext 0.0.8 loads, waits for fonts, lays out 34 eligible text blocks, and
   emits complete `.pt-line` spans whose text matches each source block; the
-  native fallback retains readable content when the module is unavailable.
+  native fallback retains readable content when the module is unavailable. The
+  suite also rejects any generated Pretext line that wraps again in the DOM.
 - [x] The banner, sidebar, slide frame, controls, charts, and prose were visually
   inspected in representative desktop, portrait-phone, landscape-phone, and
   presentation-mode screenshots.

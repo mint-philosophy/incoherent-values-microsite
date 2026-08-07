@@ -177,12 +177,21 @@ function layoutPretext(slide, scale = 1) {
   if (!state.pretext) return;
   const started = performance.now();
   const targets = state.pretextTargets.filter((element) => slide.contains(element));
-  const reads = targets.map((element) => ({
-    element,
-    text: element.dataset.pretextText,
-    font: fontSpec(element),
-    width: element.getBoundingClientRect().width / Math.max(scale, 0.01)
-  })).filter((item) => item.width > 1);
+  const reads = targets.map((element) => {
+    const style = getComputedStyle(element);
+    const horizontalInsets = [
+      style.paddingLeft,
+      style.paddingRight,
+      style.borderLeftWidth,
+      style.borderRightWidth
+    ].reduce((total, value) => total + (Number.parseFloat(value) || 0), 0);
+    return {
+      element,
+      text: element.dataset.pretextText,
+      font: fontSpec(element),
+      width: element.getBoundingClientRect().width / Math.max(scale, 0.01) - horizontalInsets
+    };
+  }).filter((item) => item.width > 1);
   const layouts = reads.map((item) => computePretextLines(item.text, item.font, item.width));
   reads.forEach((item, index) => {
     item.element.innerHTML = layouts[index]
@@ -256,6 +265,9 @@ function visibleContentBounds(slide) {
 
 function measureSlide(slide, scale) {
   setSlideScale(slide, scale);
+  // The first Pretext pass can change an intrinsic grid track; the second pass
+  // measures line widths against that settled track at the same candidate scale.
+  setSlideScale(slide, scale);
   const frame = slide.getBoundingClientRect();
   const content = visibleContentBounds(slide);
   const fits = content.top >= frame.top - 0.5
@@ -295,6 +307,30 @@ function fitSlide(slide) {
       }
       scale = best;
       result = measureSlide(slide, scale);
+    }
+  }
+
+  // Replacing Pretext line spans can change an intrinsic grid track after the
+  // binary search. Apply a bounded correction from the measured overflow, then
+  // confirm the candidate against the resulting line layout.
+  if (!result.fits && scale > MIN_FIT_SCALE) {
+    for (let attempt = 0; attempt < 4 && !result.fits; attempt += 1) {
+      const availableWidth = result.frame.width - FRAME_INSET;
+      const availableHeight = result.frame.height - FRAME_INSET;
+      const contentWidth = result.content.right - result.frame.left;
+      const contentHeight = result.content.bottom - result.frame.top;
+      const measuredRatio = Math.min(
+        availableWidth / Math.max(contentWidth, 1),
+        availableHeight / Math.max(contentHeight, 1),
+        0.98
+      );
+      const corrected = Math.floor(scale * measuredRatio * 0.995 * 1000) / 1000;
+      const nextScale = Math.min(scale - 0.01, corrected);
+      scale = Math.max(MIN_FIT_SCALE, Number(nextScale.toFixed(3)));
+      result = measureSlide(slide, scale);
+      if (result.fits) {
+        result = measureSlide(slide, scale);
+      }
     }
   }
 
