@@ -1,0 +1,55 @@
+{
+  "title": "Incoherent Values? Probing LLM Preferences Through Parametric Variation",
+  "shortTitle": "Incoherent Values?",
+  "subtitle": "Probing LLM Preferences Through Parametric Variation",
+  "authors": [
+    "Elena Ajayi",
+    "Angelica Chowdhury",
+    "Seth Lazar"
+  ],
+  "source": {
+    "kind": "arxiv",
+    "label": "arXiv",
+    "url": "https://arxiv.org/abs/2606.21102",
+    "id": "2606.21102v1",
+    "note": "Authoritative public preprint"
+  },
+  "autoSyncFromSource": false,
+  "links": [
+    {
+      "id": "arxiv",
+      "kind": "paper",
+      "label": "arXiv",
+      "url": "https://arxiv.org/abs/2606.21102",
+      "approvedForPublication": true
+    },
+    {
+      "id": "pdf",
+      "kind": "pdf",
+      "label": "PDF",
+      "url": "https://arxiv.org/pdf/2606.21102",
+      "approvedForPublication": true
+    },
+    {
+      "id": "dataset",
+      "kind": "dataset",
+      "label": "Dataset",
+      "url": "https://huggingface.co/datasets/MINTLABJHUANU/LLMCoherence_Var_100",
+      "approvedForPublication": true
+    },
+    {
+      "id": "code",
+      "kind": "code",
+      "label": "Code",
+      "url": "https://github.com/mint-philosophy/llm_coherence",
+      "approvedForPublication": true
+    },
+    {
+      "id": "mazeika-values",
+      "kind": "citation",
+      "label": "Mazeika et al.",
+      "url": "https://arxiv.org/abs/2502.08640",
+      "approvedForPublication": true
+    }
+  ]
+}

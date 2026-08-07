@@ -1,0 +1,13 @@
+{
+  "name": "incoherent-values-microsite",
+  "private": true,
+  "scripts": {
+    "qa": "npm run qa:html && npm run qa:deck",
+    "qa:html": "html-validate index.html deck.html",
+    "qa:deck": "node tests/verify-deck.cjs"
+  },
+  "devDependencies": {
+    "html-validate": "11.6.2",
+    "playwright": "1.62.1"
+  }
+}
