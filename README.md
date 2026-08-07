@@ -30,6 +30,12 @@ in `index.html` as well. Dense material should be split into another slide rathe
 than made unreadably small. The fitting engine recalculates after fonts, Pretext,
 theme, frame, and viewport changes.
 
+Body prose follows one logical type contract in `deck.css`: Newsreader at a fixed
+size and leading, with Pretext responsible for line placement and the slide fitter
+responsible for uniform whole-slide scaling. Do not add breakpoint-specific prose
+sizes. On the model-results slide, `data-finding-label` supplies the JetBrains Mono
+labels for the evenly ruled summary rows.
+
 The MINT banner and global sitemap are loaded from `mintresearch.org`. This repo
 keeps a local adaptation of the current presentation shell because the shared
 shell JavaScript contains root-relative main-site routes that do not resolve
@@ -61,7 +67,8 @@ sizes. It also checks Pretext-generated line output, structured links, direct
 hashes, Previous/Next and shell/deck keyboard navigation, theme changes,
 sidebar/drawer states, reduced motion, animation reversibility, text overflow,
 comparison-panel containment, model-results composition, and chart-label
-collisions.
+collisions. The model-results checks also reject unequal prose sizing, leading,
+padding, margins, or spacing between its summary rows.
 
 See `VISUAL_QA.md` and `PUBLICATION_CHECKLIST.md` for the current review record.
 

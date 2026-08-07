@@ -19,14 +19,20 @@ closed and open drawer, plus a full scroll to its final link.
 | 844x390 | Landscape | [x] | [x] | [x] | [x] | [x] | [x] |
 
 Additional passing viewports: `2560x1080`, `1366x768`, `820x1180`,
-`622x800`, `637x800`, `360x640`, and `667x375`.
+`622x800`, `637x800`, `628x633`, `360x640`, and `667x375`.
 
-The minimum fitted scale across the matrix is `0.595` in the framed `360x640`
+The minimum fitted scale across the matrix is `0.570` in the framed `360x640`
 case. All other tested cases fit at a larger scale. The QA script rejects any
 slide whose measured content escapes the iframe, any Pretext-managed block with
 horizontal overflow, any comparison chart that escapes its visual stack or
 overlaps the explanatory prose, and any collision among model-chart labels,
 bars, or values.
+
+Editorial paragraphs use one fixed logical Newsreader size and leading across
+breakpoints. Pretext places the lines, then the fitter scales the complete slide.
+The model-results summary uses three evenly ruled rows with JetBrains Mono labels;
+the suite verifies equal font size, leading, margins, padding, and row spacing in
+both framed and presentation modes.
 
 ## Motion and animation matrix
 

@@ -4,6 +4,11 @@
   --deck-controls-h: 58px;
   --deck-pad-x: 42px;
   --deck-pad-y: 28px;
+  --deck-prose-size: 19px;
+  --deck-prose-leading: 1.35;
+  --deck-prose-gap: 12px;
+  --deck-finding-label-w: 66px;
+  --deck-finding-pad-y: 10px;
 }
 
 html,
@@ -171,14 +176,18 @@ body.deck-page {
 }
 
 .prototype-c .editorial-copy {
-  gap: 12px;
+  gap: var(--deck-prose-gap);
   max-width: none;
-  font-size: 19px;
-  line-height: 1.35;
+  font-size: var(--deck-prose-size);
+  line-height: var(--deck-prose-leading);
 }
 
-.prototype-c .editorial-copy p {
-  line-height: 1.35;
+.prototype-c .editorial-copy > p:not(.eyebrow) {
+  max-width: none;
+  margin: 0;
+  font-size: inherit;
+  line-height: inherit;
+  letter-spacing: 0;
 }
 
 .pt-line {
@@ -381,6 +390,41 @@ body.deck-page {
   padding-top: 0;
 }
 
+.results-model-slide .results-summary-copy {
+  align-self: start;
+  gap: 0;
+  border-top: 1px solid var(--border-strong);
+}
+
+.results-model-slide .results-summary-copy > p:not(.eyebrow) {
+  position: relative;
+  min-height: calc(var(--deck-prose-size) * var(--deck-prose-leading) + 2 * var(--deck-finding-pad-y));
+  padding: var(--deck-finding-pad-y) 0 var(--deck-finding-pad-y) var(--deck-finding-label-w);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-1);
+}
+
+.results-model-slide .results-summary-copy > p::before {
+  content: attr(data-finding-label);
+  position: absolute;
+  top: calc(var(--deck-finding-pad-y) + 5px);
+  left: 0;
+  width: calc(var(--deck-finding-label-w) - 10px);
+  color: var(--accent);
+  font: 600 8px/1 var(--font-ui);
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.results-model-slide .results-summary-copy .results-summary-lead {
+  color: var(--text-1);
+  font-size: inherit;
+}
+
+.results-model-slide .results-summary-copy .results-reasoning-copy {
+  margin-top: 0;
+}
+
 .results-model-slide .strict-mono-card {
   padding: 14px 18px;
 }
@@ -570,10 +614,6 @@ body.deck-page {
     gap: 16px;
   }
 
-  .prototype-c .editorial-copy {
-    font-size: 18px;
-  }
-
   .deck-title-slide h1 {
     font-size: 50px;
   }
@@ -629,11 +669,6 @@ body.deck-page {
 
   .prototype-c .editorial-section-heading h2 {
     font-size: 25px;
-  }
-
-  .prototype-c .editorial-copy {
-    gap: 8px;
-    font-size: 16px;
   }
 
   .deck-title-slide h1 {
@@ -702,14 +737,6 @@ body.deck-page {
 
   .results-example-slide .result-curve-card {
     padding: 10px;
-  }
-
-  .results-model-slide .results-summary-copy {
-    font-size: 14px;
-  }
-
-  .results-model-slide .results-summary-copy .results-summary-lead {
-    font-size: 20px;
   }
 
   .results-model-slide .strict-mono-card {
@@ -837,11 +864,6 @@ body.deck-page {
 
   .prototype-c .editorial-section-heading h2 {
     font-size: 24px;
-  }
-
-  .prototype-c .editorial-copy {
-    gap: 7px;
-    font-size: 15px;
   }
 
   .coherence-cycle-diagram {

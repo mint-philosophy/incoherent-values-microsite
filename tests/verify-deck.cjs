@@ -14,6 +14,7 @@ const VIEWPORTS = [
   { name: 'tablet', width: 820, height: 1180 },
   { name: 'medium-portrait', width: 622, height: 800 },
   { name: 'medium-portrait-wide', width: 637, height: 800 },
+  { name: 'compact-square', width: 628, height: 633 },
   { name: 'phone', width: 390, height: 844 },
   { name: 'small-phone', width: 360, height: 640 },
   { name: 'phone-landscape', width: 844, height: 390 },
@@ -100,6 +101,50 @@ async function resultsModelLayoutIssues(frame) {
     if (!within(copy, story)) issues.push('summary escapes content grid');
     if (!within(chart, story)) issues.push('chart escapes content grid');
     if (overlaps(copy, chart)) issues.push('summary overlaps chart');
+    return issues;
+  });
+}
+
+async function resultsSummaryTypographyIssues(frame) {
+  return frame.evaluate(() => {
+    const summary = document.querySelector('#c-results-models .results-summary-copy');
+    const rows = summary ? Array.from(summary.children) : [];
+    if (!summary || rows.length !== 3) return ['model-results summary rows are missing'];
+
+    const expectedLabels = ['Average', 'Reasoning', 'Details'];
+    const issues = [];
+    const summaryStyle = getComputedStyle(summary);
+    const styles = rows.map((row) => getComputedStyle(row));
+    const rects = rows.map((row) => row.getBoundingClientRect());
+    const pixelValue = (value) => Number.parseFloat(value) || 0;
+    const nearlyEqual = (first, second, tolerance = 0.1) => Math.abs(first - second) <= tolerance;
+
+    if (!nearlyEqual(pixelValue(summaryStyle.rowGap), 0)) issues.push('summary rows use an arbitrary grid gap');
+    if (!rows.every((row, index) => row.dataset.findingLabel === expectedLabels[index])) {
+      issues.push('summary row labels changed');
+    }
+
+    const fontSize = pixelValue(styles[0].fontSize);
+    const lineHeight = pixelValue(styles[0].lineHeight);
+    const paddingTop = pixelValue(styles[0].paddingTop);
+    const paddingBottom = pixelValue(styles[0].paddingBottom);
+    styles.forEach((style, index) => {
+      if (!nearlyEqual(pixelValue(style.fontSize), fontSize)) issues.push(`row ${index + 1} font size differs`);
+      if (!nearlyEqual(pixelValue(style.lineHeight), lineHeight)) issues.push(`row ${index + 1} line height differs`);
+      if (!nearlyEqual(pixelValue(style.marginTop), 0) || !nearlyEqual(pixelValue(style.marginBottom), 0)) {
+        issues.push(`row ${index + 1} has inherited margins`);
+      }
+      if (!nearlyEqual(pixelValue(style.paddingTop), paddingTop)
+        || !nearlyEqual(pixelValue(style.paddingBottom), paddingBottom)) {
+        issues.push(`row ${index + 1} vertical padding differs`);
+      }
+    });
+
+    for (let index = 1; index < rects.length; index += 1) {
+      if (!nearlyEqual(rects[index].top, rects[index - 1].bottom, 1)) {
+        issues.push(`row ${index + 1} does not meet the preceding rule`);
+      }
+    }
     return issues;
   });
 }
@@ -194,6 +239,11 @@ async function verifyViewport(browser, baseUrl, viewport) {
       await resultsModelLayoutIssues(frame),
       [],
       `${viewport.name}: framed model-results layout collision`
+    );
+    assert.deepEqual(
+      await resultsSummaryTypographyIssues(frame),
+      [],
+      `${viewport.name}: framed model-results typography drift`
     );
     const rowOverlaps = await frame.locator('.active .strict-mono-row').evaluateAll((rows) => {
       const overlaps = (first, second) => !(
@@ -355,6 +405,11 @@ async function verifyViewport(browser, baseUrl, viewport) {
       await resultsModelLayoutIssues(frame),
       [],
       `${viewport.name}: presentation model-results layout collision`
+    );
+    assert.deepEqual(
+      await resultsSummaryTypographyIssues(frame),
+      [],
+      `${viewport.name}: presentation model-results typography drift`
     );
 
     await frame.locator('body').press('Escape');
