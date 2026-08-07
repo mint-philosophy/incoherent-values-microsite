@@ -60,7 +60,7 @@ slides in framed and presentation modes at desktop, ultrawide, tablet, portrait
 phone, and landscape phone sizes. It also checks Pretext activation, structured
 links, direct hashes, Previous/Next and keyboard navigation, theme changes,
 sidebar/drawer states, reduced motion, animation reversibility, text overflow,
-and model-chart label collisions.
+comparison-panel containment, and model-chart label collisions.
 
 See `VISUAL_QA.md` and `PUBLICATION_CHECKLIST.md` for the current review record.
 

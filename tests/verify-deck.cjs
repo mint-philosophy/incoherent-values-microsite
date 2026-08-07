@@ -12,6 +12,7 @@ const VIEWPORTS = [
   { name: 'desktop', width: 1440, height: 960 },
   { name: 'laptop', width: 1366, height: 768 },
   { name: 'tablet', width: 820, height: 1180 },
+  { name: 'medium-portrait', width: 622, height: 800 },
   { name: 'phone', width: 390, height: 844 },
   { name: 'small-phone', width: 360, height: 640 },
   { name: 'phone-landscape', width: 844, height: 390 },
@@ -73,6 +74,29 @@ async function diagnostics(frame) {
       && result.config.status !== 'loading';
   });
   return frame.evaluate(() => window.__deckDiagnostics);
+}
+
+async function comparisonLayoutIssues(frame) {
+  return frame.evaluate(() => {
+    const visual = document.querySelector('#c-comparison .comparison-visual-stack')?.getBoundingClientRect();
+    const chart = document.querySelector('#c-comparison .monotonicity-example-card')?.getBoundingClientRect();
+    const copy = document.querySelector('#c-comparison .editorial-copy')?.getBoundingClientRect();
+    if (!visual || !chart || !copy) return ['comparison elements are missing'];
+
+    const within = (child, parent) => child.left >= parent.left - 0.5
+      && child.right <= parent.right + 0.5
+      && child.top >= parent.top - 0.5
+      && child.bottom <= parent.bottom + 0.5;
+    const overlaps = (first, second) => !(first.right <= second.left + 0.5
+      || second.right <= first.left + 0.5
+      || first.bottom <= second.top + 0.5
+      || second.bottom <= first.top + 0.5);
+
+    const issues = [];
+    if (!within(chart, visual)) issues.push('chart escapes visual stack');
+    if (overlaps(chart, copy)) issues.push('chart overlaps explanatory copy');
+    return issues;
+  });
 }
 
 async function verifyViewport(browser, baseUrl, viewport) {
@@ -206,6 +230,11 @@ async function verifyViewport(browser, baseUrl, viewport) {
 
     await frame.evaluate(() => window.postMessage({ type: 'mint-deck-go', id: 'c-comparison' }, location.origin));
     await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '6 / 10');
+    assert.deepEqual(
+      await comparisonLayoutIssues(frame),
+      [],
+      `${viewport.name}: framed comparison layout collision`
+    );
     const motionStates = await frame.evaluate(() => {
       const animated = document.querySelectorAll('.active .animated-tier-face, .active .animated-comparison-mark span');
       const snapshot = (time) => {
@@ -259,6 +288,11 @@ async function verifyViewport(browser, baseUrl, viewport) {
       presentationResult.slides.filter((slide) => !slide.fits),
       [],
       `${viewport.name}: presentation-mode slide overflow`
+    );
+    assert.deepEqual(
+      await comparisonLayoutIssues(frame),
+      [],
+      `${viewport.name}: presentation comparison layout collision`
     );
 
     await frame.locator('body').press('Escape');

@@ -117,6 +117,7 @@ body.deck-page {
   overflow: visible;
   transform: scale(var(--fit-scale, 1));
   transform-origin: top left;
+  transition: none !important;
 }
 
 .slide-plane > * {
@@ -323,6 +324,10 @@ body.deck-page {
 .comparison-visual-stack,
 .comparison-slide .editorial-copy {
   align-self: center;
+}
+
+.comparison-visual-stack {
+  height: max-content;
 }
 
 .animated-fixed-comparison {
@@ -590,6 +595,13 @@ body.deck-page {
 
   .results-model-slide .strict-mono-card {
     align-self: stretch;
+  }
+}
+
+@media (max-width: 900px) and (orientation: portrait) {
+  .prototype-c #c-comparison .slide-plane {
+    grid-template-rows: auto auto auto;
+    align-content: start;
   }
 }
 
