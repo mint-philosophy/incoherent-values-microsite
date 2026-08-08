@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="prototype.css?v=20260807-deck">
-  <link rel="stylesheet" href="deck.css?v=20260807.6">
-  <script type="module" src="deck.js?v=20260807.6"></script>
+  <link rel="stylesheet" href="deck.css?v=20260807.8">
+  <script type="module" src="deck.js?v=20260807.9"></script>
 </head>
 <body class="deck-page">
   <a class="skip-link" href="#c-title-slide">Skip to slides</a>
@@ -39,10 +39,10 @@
           <h2>Do Models Have Coherent Values?</h2>
         </header>
         <div class="overview-coherence">
-          <div class="editorial-copy">
-            <p>To trust Large Language Models, we need to know how they will perform in novel situations.</p>
-            <p>Some (e.g. <a data-paper-link="mazeika-values" hidden>Mazeika et al.</a>) think that when LLMs make choices, they are (increasingly) guided by coherent <em>values</em>. If this is true, it could be crucial for trusting LLMs' behaviour in novel situations.</p>
-            <p>We introduce a new way of testing how coherent an LLM's values are. It shows that LLMs' values are more incoherent than previously thought.</p>
+          <div class="editorial-copy slide-points">
+            <p data-point-icon="trust">To trust Large Language Models, we need to know how they will perform in novel situations.</p>
+            <p data-point-icon="values" data-pretext-native>Some (e.g. <a data-paper-link="mazeika-values" hidden>Mazeika et al.</a>) think that when LLMs make choices, they are (increasingly) guided by coherent <em>values</em>. If this is true, it could be crucial for trusting LLMs' behaviour in novel situations.</p>
+            <p data-point-icon="test">We introduce a new way of testing how coherent an LLM's values are. It shows that LLMs' values are more incoherent than previously thought.</p>
           </div>
         </div>
 
@@ -64,6 +64,10 @@
               <strong role="rowheader">GLM-4.5 Base</strong><div aria-hidden="true"><i></i></div><span role="cell">10.1%</span>
             </div>
             <div class="model-result-scale" aria-hidden="true"><span>0</span><span>25</span><span>50</span><span>75</span><span>100%</span></div>
+          </div>
+          <div class="strict-mono-legend" role="group" aria-label="Chart legend">
+            <span class="reasoning-off"><i aria-hidden="true"></i>Reasoning off</span>
+            <span class="reasoning-on"><i aria-hidden="true"></i>Reasoning on</span>
           </div>
           <div class="model-results-actions">
             <a class="text-link model-results-next" href="#c-coherence">Let us explain <span aria-hidden="true">↓</span></a>
@@ -105,11 +109,11 @@
 
           <p class="cycle-warning"><strong>This would be incoherent</strong><span>A<sup>+</sup> &gt; A &gt; B &gt; A<sup>+</sup></span></p>
         </div>
-        <div class="editorial-copy coherence-forced-choice-copy">
-          <p data-coherence-icon="choice">We give LLMs many forced choices between two options.</p>
-          <p data-coherence-icon="measure">The more valued option in a pair is the one that the LLM chooses more often.</p>
-          <p data-coherence-icon="order">Values should be coherent: if A⁺ has more of what makes A valuable, and A is valued over B, then A⁺ should be valued over B.</p>
-          <p data-coherence-icon="cycle">If the model values B over A⁺ instead, its preferences form an incoherent cycle. This is the kind of incoherence we tested for.</p>
+        <div class="editorial-copy slide-points coherence-forced-choice-copy">
+          <p data-point-icon="choice">We give LLMs many forced choices between two options.</p>
+          <p data-point-icon="measure">The more valued option in a pair is the one that the LLM chooses more often.</p>
+          <p data-point-icon="order">Values should be coherent: if A⁺ has more of what makes A valuable, and A is valued over B, then A⁺ should be valued over B.</p>
+          <p data-point-icon="cycle">If the model values B over A⁺ instead, its preferences form an incoherent cycle. This is the kind of incoherence we tested for.</p>
         </div>
       </section>
 
@@ -118,9 +122,9 @@
           <span class="editorial-index">02</span>
           <h2>Using Value Ladders</h2>
         </header>
-        <div class="editorial-copy">
-          <p>We took 100 options from Mazeika et al. and varied the parameter that makes the option more or less choiceworthy. This means that each option (T4) gives us three progressively worse options (T1-T3), and three progressively better ones (T5-7). These are our 'value ladders'.</p>
-          <p>When pairs of options are compared within the ladder, their values should be ordered in this way.</p>
+        <div class="editorial-copy slide-points ladder-method-copy">
+          <p data-point-icon="ladder">We took 100 options from Mazeika et al. and varied the parameter that makes the option more or less choiceworthy. This means that each option (T4) gives us three progressively worse options (T1-T3), and three progressively better ones (T5-7). These are our 'value ladders'.</p>
+          <p data-point-icon="sequence">When pairs of options are compared within the ladder, their values should be ordered in this way.</p>
           <div class="tier-order-strip" role="img" tabindex="0" aria-label="Within-ladder ordering: T7 is preferred to T6, which is preferred to T5, T4, T3, T2, and T1">
             <div class="tier-order-item"><img src="assets/human-happiness-a-t7-128.png" alt=""><strong>T7</strong></div>
             <span class="tier-order-mark" aria-hidden="true">&gt;</span>
@@ -136,12 +140,12 @@
             <span class="tier-order-mark" aria-hidden="true">&gt;</span>
             <div class="tier-order-item"><img src="assets/human-happiness-a-t1-weaker-128.png" alt=""><strong>T1</strong></div>
           </div>
-          <p>Models were generally quite accurate at this kind of test.</p>
+          <p data-point-icon="accurate">Models were generally quite accurate at this kind of test.</p>
           <div class="ladder-consistency-card" role="note" aria-label="Verified paper result: 97.3 percent average accuracy at pairwise ladder ranking">
             <strong>97.3%</strong>
             <p>average accuracy at pairwise ladder ranking</p>
           </div>
-          <p>So far, so good.</p>
+          <p data-point-icon="confirm">So far, so good.</p>
         </div>
       </section>
 
@@ -243,11 +247,10 @@
             <p class="monotonicity-example-note">Chance of picking the ladder option over the fixed alternative</p>
           </div>
         </div>
-        <div class="editorial-copy">
-          <p>For a more robust test of value coherence, we compare the ladder options to fixed alternatives.</p>
-          <p>As we compare <em>higher</em> items on the ladder to the fixed alternative, the LLM's valuing of the ladder item <em>should grow monotonically</em> (not decrease).</p>
-          <p>Otherwise, the model exhibits an incoherent cycle of preferences, e.g. T4&gt;T3&gt;X&gt;T4.</p>
-          <p>Here's what we found...</p>
+        <div class="editorial-copy slide-points">
+          <p data-point-icon="compare">For a more robust test of value coherence, we compare the ladder options to fixed alternatives.</p>
+          <p data-point-icon="trend">As we compare higher items on the ladder to the fixed alternative, the LLM's valuing of the ladder item should grow monotonically (not decrease).</p>
+          <p data-point-icon="cycle">Otherwise, the model exhibits an incoherent cycle of preferences, e.g. T4 &gt; T3 &gt; X &gt; T4.</p>
         </div>
       </section>
 
@@ -257,9 +260,9 @@
           <h2>What we found</h2>
         </header>
         <div class="results-story">
-          <div class="editorial-copy results-intro">
-            <p>Models showed significant incoherence when performing these fixed comparisons.</p>
-            <p>Consider this example, where GLM-4.5 Hybrid could not coherently compare different levels of human happiness to the life of an alligator.</p>
+          <div class="editorial-copy slide-points results-intro">
+            <p data-point-icon="finding">Models showed significant incoherence when performing these fixed comparisons.</p>
+            <p data-point-icon="example">Consider this example, where GLM-4.5 Hybrid could not coherently compare different levels of human happiness to the life of an alligator.</p>
           </div>
           <div class="result-curve-card incoherence-example-card">
             <p class="incoherence-example-disclosure">GLM-4.5 Hybrid · 20 trials per tier</p>
@@ -294,7 +297,7 @@
           <h2>What we found</h2>
         </header>
         <div class="results-story results-model-story">
-          <div class="editorial-copy results-summary-copy">
+          <div class="editorial-copy slide-findings results-summary-copy">
             <p class="results-summary-lead" data-finding-label="Average">On average, LLMs' rankings were monotonic only 59.5% of the time.</p>
             <p class="results-reasoning-copy" data-finding-label="Reasoning">Turning on model 'reasoning' generally increased their score.</p>
             <p data-finding-label="Details">See the paper for more detailed measurements of value (in)coherence.</p>
@@ -341,8 +344,8 @@
         <div class="upshot-statement">
           <strong>Coherent LLM values may be further away than we thought.</strong>
         </div>
-        <div class="editorial-copy">
-          <p>Until future models perform closer to 100% on tests like ours, claims that they have emergent, coherent values should be treated with scepticism.</p>
+        <div class="editorial-copy slide-points">
+          <p data-point-icon="caution">Until future models perform closer to 100% on tests like ours, claims that they have emergent, coherent values should be treated with scepticism.</p>
         </div>
       </section>
 
@@ -351,8 +354,8 @@
           <span class="editorial-index">06</span>
           <h2>Read and explore</h2>
         </header>
-        <div class="editorial-copy">
-          <p>For the full details, check out the paper. Our dataset and code are public, too.</p>
+        <div class="editorial-copy slide-points">
+          <p data-point-icon="paper">For the full details, check out the paper. Our dataset and code are public, too.</p>
         </div>
         <div class="research-links">
           <a class="paper-link-primary" data-paper-link="arxiv" hidden>

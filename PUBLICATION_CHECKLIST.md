@@ -1,11 +1,11 @@
 # Publication checklist - Incoherent Values?
 
-- Publication owner/reviewer: pending Seth review
+- Publication owner/reviewer: Seth Lazar
 - Implementation and QA reviewer: `Minty-3f7a`
 - Target domain: `https://mint-philosophy.github.io/incoherent-values-microsite/`
 - Candidate branch: `codex/responsive-slide-deck`
 - Candidate commit: branch tip
-- Approval date: pending
+- Approval date: `2026-08-07`
 
 ## Wording and identity
 
@@ -53,9 +53,9 @@ microsite; the migration moves them into the current structured-link contract.
 
 ## Release authorization
 
-- [ ] Seth has visually reviewed the candidate.
+- [x] Seth has visually reviewed the candidate.
 - [x] Final diff, status, branch, and remote were reviewed locally.
 - [x] Commit scope contains only the intended microsite changes.
-- [ ] The user explicitly requested a GitHub push in the current conversation.
+- [x] The user explicitly requested a GitHub push in the current conversation.
 
 Do not push while the last item is unchecked.

@@ -129,6 +129,7 @@ async function resultsSummaryTypographyIssues(frame) {
     const lineHeight = pixelValue(styles[0].lineHeight);
     const paddingTop = pixelValue(styles[0].paddingTop);
     const paddingBottom = pixelValue(styles[0].paddingBottom);
+    if (!nearlyEqual(fontSize, 22)) issues.push(`findings prose is ${fontSize}px instead of 22px`);
     styles.forEach((style, index) => {
       if (!nearlyEqual(pixelValue(style.fontSize), fontSize)) issues.push(`row ${index + 1} font size differs`);
       if (!nearlyEqual(pixelValue(style.lineHeight), lineHeight)) issues.push(`row ${index + 1} line height differs`);
@@ -146,6 +147,82 @@ async function resultsSummaryTypographyIssues(frame) {
         issues.push(`row ${index + 1} does not meet the preceding rule`);
       }
     }
+    return issues;
+  });
+}
+
+async function slidePointContractIssues(frame) {
+  return frame.evaluate(() => {
+    const expected = {
+      'c-overview': ['trust', 'values', 'test'],
+      'c-coherence': ['choice', 'measure', 'order', 'cycle'],
+      'c-ladder': ['ladder', 'sequence', 'accurate', 'confirm'],
+      'c-comparison': ['compare', 'trend', 'cycle'],
+      'c-results': ['finding', 'example'],
+      'c-upshot': ['caution'],
+      'c-links': ['paper']
+    };
+    const issues = [];
+    const pixelValue = (value) => Number.parseFloat(value) || 0;
+    const nearlyEqual = (first, second, tolerance = 0.1) => Math.abs(first - second) <= tolerance;
+    const unsupportedCopies = Array.from(document.querySelectorAll('.editorial-copy')).filter((copy) => (
+      !copy.classList.contains('slide-points') && !copy.classList.contains('slide-findings')
+    ));
+    if (unsupportedCopies.length) {
+      issues.push(`unstyled editorial copy: ${unsupportedCopies.map((copy) => copy.closest('.editorial-slide')?.id).join(', ')}`);
+    }
+
+    Object.entries(expected).forEach(([slideId, expectedIcons]) => {
+      const slide = document.getElementById(slideId);
+      const group = slide?.querySelector('.slide-points');
+      const rows = group
+        ? Array.from(group.children).filter((element) => element.matches('p[data-point-icon]'))
+        : [];
+      if (!slide || !group || rows.length !== expectedIcons.length) {
+        issues.push(`${slideId}: expected ${expectedIcons.length} explanatory rows, found ${rows.length}`);
+        return;
+      }
+
+      const groupStyle = getComputedStyle(group);
+      if (!nearlyEqual(pixelValue(groupStyle.rowGap), 0)) issues.push(`${slideId}: arbitrary row gap`);
+
+      rows.forEach((row, index) => {
+        const style = getComputedStyle(row);
+        const markerStyle = getComputedStyle(row, '::before');
+        const previousIsPoint = row.previousElementSibling?.matches('p[data-point-icon]') || false;
+        if (row.dataset.pointIcon !== expectedIcons[index]) issues.push(`${slideId}: row ${index + 1} icon changed`);
+        if (markerStyle.backgroundImage === 'none') issues.push(`${slideId}: row ${index + 1} marker is missing`);
+        if (row.querySelector('br')) issues.push(`${slideId}: row ${index + 1} contains a manual line break`);
+        if (!row.classList.contains('pretext-managed') && !row.hasAttribute('data-pretext-native')) {
+          issues.push(`${slideId}: row ${index + 1} has no declared text-layout path`);
+        }
+        if (row.classList.contains('pretext-managed') && row.hasAttribute('data-pretext-native')) {
+          issues.push(`${slideId}: row ${index + 1} has conflicting text-layout paths`);
+        }
+        if (!nearlyEqual(pixelValue(style.fontSize), 22)) issues.push(`${slideId}: row ${index + 1} is not 22px`);
+        if (!nearlyEqual(pixelValue(style.lineHeight), 29.7, 0.2)) issues.push(`${slideId}: row ${index + 1} leading changed`);
+        if (!nearlyEqual(pixelValue(style.marginTop), 0) || !nearlyEqual(pixelValue(style.marginBottom), 0)) {
+          issues.push(`${slideId}: row ${index + 1} has inherited margins`);
+        }
+        if (!nearlyEqual(pixelValue(style.paddingTop), pixelValue(style.paddingBottom))) {
+          issues.push(`${slideId}: row ${index + 1} has unequal vertical padding`);
+        }
+        if (!nearlyEqual(pixelValue(style.borderBottomWidth), 1)) {
+          issues.push(`${slideId}: row ${index + 1} has no lower rule`);
+        }
+        const expectedTopBorder = previousIsPoint ? 0 : 1;
+        if (!nearlyEqual(pixelValue(style.borderTopWidth), expectedTopBorder)) {
+          issues.push(`${slideId}: row ${index + 1} has the wrong group-start rule`);
+        }
+        if (previousIsPoint) {
+          const previousRect = row.previousElementSibling.getBoundingClientRect();
+          const rowRect = row.getBoundingClientRect();
+          if (!nearlyEqual(rowRect.top, previousRect.bottom, 1)) {
+            issues.push(`${slideId}: row ${index + 1} does not meet the preceding rule`);
+          }
+        }
+      });
+    });
     return issues;
   });
 }
@@ -186,7 +263,7 @@ async function coherenceCopyIssues(frame) {
 
     rows.forEach((row, index) => {
       const style = styles[index];
-      if (row.dataset.coherenceIcon !== expectedIcons[index]) issues.push(`row ${index + 1} icon changed`);
+      if (row.dataset.pointIcon !== expectedIcons[index]) issues.push(`row ${index + 1} icon changed`);
       if (getComputedStyle(row, '::before').backgroundImage === 'none') issues.push(`row ${index + 1} icon is missing`);
       if (!row.classList.contains('pretext-managed')) issues.push(`row ${index + 1} is not managed by Pretext`);
       if (!nearlyEqual(pixelValue(style.fontSize), fontSize)) issues.push(`row ${index + 1} font size differs`);
@@ -263,6 +340,11 @@ async function verifyViewport(browser, baseUrl, viewport) {
     assert.equal(result.config.status, 'ready', `${viewport.name}: paper config did not load`);
     assert.equal(result.config.approvedLinks, 5, `${viewport.name}: approved link count changed`);
     assert.deepEqual(result.slides.filter((slide) => !slide.fits), [], `${viewport.name}: framed slide overflow`);
+    assert.deepEqual(
+      await slidePointContractIssues(frame),
+      [],
+      `${viewport.name}: explanatory-row style contract drift`
+    );
 
     const deckBounds = await frame.locator('#deck').evaluate((element) => {
       const rect = element.getBoundingClientRect();
@@ -302,6 +384,10 @@ async function verifyViewport(browser, baseUrl, viewport) {
     await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '7 / 10');
     await frame.locator('#deckNext').click();
     assert.equal(await frame.locator('#deckCounter').textContent(), '8 / 10');
+    await page.keyboard.press('ArrowRight');
+    await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '9 / 10');
+    await page.keyboard.press('ArrowLeft');
+    await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '8 / 10');
     assert.deepEqual(
       await resultsModelLayoutIssues(frame),
       [],

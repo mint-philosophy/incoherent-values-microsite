@@ -18,6 +18,8 @@ content edits do not require changing the responsive frame:
 - `deck.css` and `deck.js` provide responsive slide composition, Pretext line
   layout, viewport fitting, keyboard/touch navigation, and the persistent
   Previous/Next controls.
+- `STYLE_GUIDE.md` is the required design and implementation contract for every
+  present and future slide.
 - `index.html`, `presentation-shell.css`, and `presentation-shell.js` provide the
   MINT frame, local slide outline, search, theme controls, and presentation mode.
 - `prototype.css` remains the visual source for Theo's diagrams, charts, colors,
@@ -35,15 +37,12 @@ switch to dark, and that explicit choice is remembered in `localStorage` under
 `mint-theme` with the `mint-theme-explicit` marker. An absent marker resolves to
 light and clears the old automatically stored dark default.
 
-Body prose follows one logical type contract in `deck.css`: Newsreader at a fixed
-size and leading, with Pretext responsible for line placement and the slide fitter
-responsible for uniform whole-slide scaling. Do not add breakpoint-specific prose
-sizes. On the model-results slide, `data-finding-label` supplies the JetBrains Mono
-labels for the evenly ruled summary rows.
-
-The coherence explanation is four actual paragraphs rather than a mixture of
-paragraphs and manual line breaks. Its `data-coherence-icon` values select the
-small pixel-art bullets; all four rows use the same `22px` type, padding, and rules.
+Explanatory prose follows one logical type contract in `deck.css`: `slide-points`
+uses Newsreader at `22px / 1.35`, equal ruled rows, and semantic pixel-art bullets.
+Pretext places eligible lines, and the slide fitter uniformly scales the complete
+slide. Do not add breakpoint-specific prose sizes. The model-results slide uses
+the matching `slide-findings` row variant, where `data-finding-label` supplies the
+JetBrains Mono utility labels instead of decorative bullets.
 
 The MINT banner and global sitemap are loaded from `mintresearch.org`. This repo
 keeps a local adaptation of the current presentation shell because the shared
@@ -84,4 +83,4 @@ See `VISUAL_QA.md` and `PUBLICATION_CHECKLIST.md` for the current review record.
 ## Deployment
 
 GitHub Pages serves the repository root from `main`; `index.html` is the entry
-point. This branch has not been pushed or deployed.
+point. Publishing `main` updates the live microsite.

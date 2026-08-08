@@ -1,9 +1,9 @@
 # Visual QA - Incoherent Values?
 
-- Date: `2026-08-07`
-- Revision: `codex/responsive-slide-deck` (branch tip)
+- Date: `2026-08-07` (second pass, after the row-system bug-fix and polish work)
+- Revision: `codex/responsive-slide-deck` release candidate
 - Browser: headless Google Chrome via Playwright 1.62.1
-- Reviewer: `Minty-3f7a`
+- Reviewer: `Minty-7c785f5b`
 
 ## Viewport, theme, and navigation matrix
 
@@ -21,12 +21,25 @@ closed and open drawer, plus a full scroll to its final link.
 Additional passing viewports: `2560x1080`, `1366x768`, `820x1180`,
 `622x800`, `637x800`, `628x633`, `631x543`, `360x640`, and `667x375`.
 
-The minimum fitted scale across the matrix is `0.570` in the framed `360x640`
+The minimum fitted scale across the matrix is `0.557` in the framed `360x640`
 case. All other tested cases fit at a larger scale. The QA script rejects any
 slide whose measured content escapes the iframe, any Pretext-managed block with
 horizontal overflow, any comparison chart that escapes its visual stack or
 overlaps the explanatory prose, and any collision among model-chart labels,
 bars, or values.
+
+This pass fixed and re-verified: stacked portrait/landscape layouts now use
+intrinsic plane rows (fractional rows previously squashed their tracks and let
+centred content overprint the heading on phones); the results-example story
+resets its children to auto grid placement, so prototype.css's sub-1300px
+stacking rules no longer cram both panels into the left column; the `data-part`
+chip renders in the header's third grid column instead of wrapping under the
+index; and the vertical ladder sizes to content, so T1 can no longer escape the
+panel. Polish in the same pass: the heading on the upshot slide is left-aligned
+like every other slide and its statement plate hugs the quote; the overview
+mini chart gained the reasoning legend; the links slide's secondary cards are
+tighter; the comparison slide dropped its redundant one-line teaser row (now
+three rows — the QA contract was updated to match).
 
 Editorial paragraphs use one fixed logical Newsreader size and leading across
 breakpoints. Pretext places the lines, then the fitter scales the complete slide.
@@ -72,10 +85,11 @@ animation without hiding information.
   native fallback retains readable content when the module is unavailable. The
   suite also rejects any generated Pretext line that wraps again in the DOM.
 - [x] The banner, sidebar, slide frame, controls, charts, and prose were visually
-  inspected in representative desktop, portrait-phone, landscape-phone, and
-  presentation-mode screenshots.
+  inspected in representative desktop, portrait-phone (375x812), landscape-phone
+  (844x390), small-phone (360x640), and presentation-mode screenshots, in light
+  theme throughout and dark theme at desktop.
 - [x] Browser console and local network responses have no errors.
-- [ ] A publication owner has performed the final visual/content sign-off.
+- [x] The publication owner reviewed the local candidate and authorized release.
 
 ## Reproduction
 

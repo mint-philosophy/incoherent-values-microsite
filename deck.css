@@ -7,6 +7,11 @@
   --deck-prose-size: 19px;
   --deck-prose-leading: 1.35;
   --deck-prose-gap: 12px;
+  --deck-point-size: 22px;
+  --deck-point-leading: 1.35;
+  --deck-point-pad-y: 11px;
+  --deck-point-icon-size: 40px;
+  --deck-point-gutter: 56px;
   --deck-finding-label-w: 66px;
   --deck-finding-pad-y: 10px;
 }
@@ -135,7 +140,7 @@ body.deck-page {
 }
 
 .prototype-c .editorial-section-heading {
-  grid-template-columns: 46px minmax(0, 1fr);
+  grid-template-columns: 46px minmax(0, 1fr) auto;
   gap: 14px;
   padding-bottom: 11px;
 }
@@ -159,10 +164,13 @@ body.deck-page {
 .editorial-slide[data-part] .editorial-section-heading::after {
   content: attr(data-part);
   justify-self: end;
-  padding: 4px 7px;
+  align-self: center;
+  padding: 4px 8px;
   border: 1px solid var(--border-strong);
   color: var(--text-2);
-  font: 600 8px/1 var(--font-ui);
+  font: 600 9px/1 var(--font-ui);
+  letter-spacing: 0.08em;
+  white-space: nowrap;
   text-transform: uppercase;
 }
 
@@ -188,6 +196,114 @@ body.deck-page {
   font-size: inherit;
   line-height: inherit;
   letter-spacing: 0;
+}
+
+/* Explanatory prose uses one semantic row system throughout the deck. */
+.prototype-c .slide-points,
+.prototype-c .slide-findings {
+  gap: 0;
+  font-size: var(--deck-point-size);
+  line-height: var(--deck-point-leading);
+}
+
+.slide-points > p:not(.eyebrow) {
+  position: relative;
+  min-height: 54px;
+  padding: var(--deck-point-pad-y) 0 var(--deck-point-pad-y) var(--deck-point-gutter);
+  border-top: 1px solid var(--border-strong);
+  border-bottom: 1px solid var(--border);
+}
+
+.slide-points > p:not(.eyebrow) + p:not(.eyebrow) {
+  border-top: 0;
+}
+
+.slide-points > p::before {
+  content: "";
+  position: absolute;
+  top: var(--deck-point-pad-y);
+  left: 0;
+  width: var(--deck-point-icon-size);
+  height: var(--deck-point-icon-size);
+  border: 1px solid var(--border);
+  background-color: color-mix(in srgb, var(--bg-0) 82%, var(--accent) 18%);
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.slide-points > p[data-point-icon="trust"]::before,
+.slide-points > p[data-point-icon="measure"]::before,
+.slide-points > p[data-point-icon="accurate"]::before,
+.slide-points > p[data-point-icon="confirm"]::before,
+.slide-points > p[data-point-icon="result"]::before,
+.slide-points > p[data-point-icon="paper"]::before {
+  background-image: url("assets/minty-teal.png");
+  background-position: center;
+  background-size: 25px auto;
+}
+
+.slide-points > p[data-point-icon="values"]::before {
+  background-image:
+    url("assets/preference-cycle-options/generated-v2/coin-large/coin-large-03-32.png"),
+    url("assets/preference-cycle-options/generated-v2/coin-small/coin-small-03-32.png");
+  background-position: right 2px top 2px, left 2px bottom 2px;
+  background-size: 25px 25px, 21px 21px;
+}
+
+.slide-points > p[data-point-icon="test"]::before,
+.slide-points > p[data-point-icon="cycle"]::before,
+.slide-points > p[data-point-icon="finding"]::before,
+.slide-points > p[data-point-icon="caution"]::before {
+  background-image:
+    url("assets/preference-cycle-options/generated-v2/coin-large/coin-large-03-32.png"),
+    url("assets/preference-cycle-options/generated-v2/coin-small/coin-small-03-32.png"),
+    url("assets/preference-cycle-options/generated-v2/ice-cream/ice-cream-01-32.png");
+  background-position: center 2px, left 4px bottom 3px, right 4px bottom 3px;
+  background-size: 17px 17px, 17px 17px, 17px 17px;
+}
+
+.slide-points > p[data-point-icon="choice"]::before {
+  background-image:
+    url("assets/preference-cycle-options/generated-v2/coin-small/coin-small-03-32.png"),
+    url("assets/preference-cycle-options/generated-v2/ice-cream/ice-cream-01-32.png");
+  background-position: left 1px center, right 1px center;
+  background-size: 23px 23px, 23px 23px;
+}
+
+.slide-points > p[data-point-icon="order"]::before {
+  background-image: url("assets/preference-cycle-options/generated-v2/coin-large/coin-large-03-32.png");
+  background-position: center;
+  background-size: 32px 32px;
+}
+
+.slide-points > p[data-point-icon="ladder"]::before {
+  background-image: url("assets/human-happiness-a-t4-128.png");
+  background-position: center;
+  background-size: 34px 34px;
+}
+
+.slide-points > p[data-point-icon="sequence"]::before,
+.slide-points > p[data-point-icon="trend"]::before {
+  background-image:
+    url("assets/human-happiness-a-t1-weaker-128.png"),
+    url("assets/human-happiness-a-t7-128.png");
+  background-position: left 1px center, right 1px center;
+  background-size: 24px 24px, 24px 24px;
+}
+
+.slide-points > p[data-point-icon="compare"]::before {
+  background-image:
+    url("assets/human-happiness-a-t4-128.png"),
+    url("assets/alligator-saved-b-128.png");
+  background-position: left 1px center, right 1px center;
+  background-size: 24px 24px, 24px 24px;
+}
+
+.slide-points > p[data-point-icon="example"]::before {
+  background-image: url("assets/alligator-saved-b-128.png");
+  background-position: center;
+  background-size: 34px 34px;
 }
 
 .pt-line {
@@ -260,6 +376,29 @@ body.deck-page {
   padding: 13px;
 }
 
+.model-headline-results .strict-mono-legend {
+  justify-content: flex-start;
+  margin: 0;
+}
+
+.model-headline-results .strict-mono-legend i {
+  --model-color: var(--accent);
+  width: 24px;
+  height: 10px;
+  background: var(--model-color);
+}
+
+.model-headline-results .strict-mono-legend .reasoning-on i {
+  background-color: var(--model-color);
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent 0,
+    transparent 5px,
+    color-mix(in srgb, var(--bg-0) 58%, transparent) 5px,
+    color-mix(in srgb, var(--bg-0) 58%, transparent) 8px
+  );
+}
+
 .prototype-c #c-coherence .slide-plane {
   grid-template-columns: minmax(360px, 0.9fr) minmax(0, 1.1fr);
 }
@@ -273,59 +412,6 @@ body.deck-page {
 
 .prototype-c .coherence-forced-choice-copy {
   align-self: start;
-  gap: 0;
-  border-top: 1px solid var(--border-strong);
-  font-size: 22px;
-}
-
-.coherence-forced-choice-copy > p:not(.eyebrow) {
-  position: relative;
-  min-height: 54px;
-  padding: 11px 0 11px 56px;
-  border-bottom: 1px solid var(--border);
-}
-
-.coherence-forced-choice-copy > p::before {
-  content: "";
-  position: absolute;
-  top: 11px;
-  left: 0;
-  width: 40px;
-  height: 40px;
-  border: 1px solid var(--border);
-  background-color: color-mix(in srgb, var(--bg-0) 82%, var(--accent) 18%);
-  background-repeat: no-repeat;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-}
-
-.coherence-forced-choice-copy > p[data-coherence-icon="choice"]::before {
-  background-image:
-    url("assets/preference-cycle-options/generated-v2/coin-small/coin-small-03-32.png"),
-    url("assets/preference-cycle-options/generated-v2/ice-cream/ice-cream-01-32.png");
-  background-position: left 1px center, right 1px center;
-  background-size: 23px 23px, 23px 23px;
-}
-
-.coherence-forced-choice-copy > p[data-coherence-icon="measure"]::before {
-  background-image: url("assets/minty-teal.png");
-  background-position: center;
-  background-size: 25px auto;
-}
-
-.coherence-forced-choice-copy > p[data-coherence-icon="order"]::before {
-  background-image: url("assets/preference-cycle-options/generated-v2/coin-large/coin-large-03-32.png");
-  background-position: center;
-  background-size: 32px 32px;
-}
-
-.coherence-forced-choice-copy > p[data-coherence-icon="cycle"]::before {
-  background-image:
-    url("assets/preference-cycle-options/generated-v2/coin-large/coin-large-03-32.png"),
-    url("assets/preference-cycle-options/generated-v2/coin-small/coin-small-03-32.png"),
-    url("assets/preference-cycle-options/generated-v2/ice-cream/ice-cream-01-32.png");
-  background-position: center 2px, left 4px bottom 3px, right 4px bottom 3px;
-  background-size: 17px 17px, 17px 17px, 17px 17px;
 }
 
 .ladder-method-slide .slide-plane,
@@ -347,6 +433,11 @@ body.deck-page {
   align-self: center;
 }
 
+.ladder-method-copy > .tier-order-strip,
+.ladder-method-copy > .ladder-consistency-card {
+  margin-block: 12px;
+}
+
 .tier-order-strip {
   overflow: hidden;
 }
@@ -360,31 +451,38 @@ body.deck-page {
   font-size: 38px;
 }
 
+/* The ladder sizes to its content and is drawn slightly larger than the frame;
+   the fitter scales the whole slide down to fit. A fixed height with
+   fractional rows once let T1 escape the panel. */
 .ladder-example-slide .vertical-ladder {
-  width: min(900px, 100%);
-  height: 100%;
+  width: min(940px, 100%);
+  height: auto;
   min-height: 0;
   justify-self: center;
-  align-self: stretch;
-  padding: 10px 14px;
+  align-self: center;
+  padding: 12px 18px;
 }
 
 .ladder-example-slide .vertical-ladder ol {
-  height: 100%;
+  height: auto;
   display: grid;
-  grid-template-rows: repeat(7, minmax(0, 1fr));
-  gap: 4px;
+  grid-auto-rows: auto;
+  gap: 5px;
 }
 
 .ladder-example-slide .ladder-tier {
   min-height: 0;
-  height: 100%;
-  grid-template-columns: 48px 42px minmax(0, 1fr);
-  padding-block: 3px;
+  height: auto;
+  grid-template-columns: 62px 48px minmax(0, 1fr);
+  padding-block: 5px;
 }
 
 .ladder-example-slide .ladder-tier img {
-  width: 46px;
+  width: 58px;
+}
+
+.ladder-example-slide .ladder-tier-description {
+  font-size: 15px;
 }
 
 .prototype-c #c-comparison .slide-plane {
@@ -426,8 +524,13 @@ body.deck-page {
   gap: 28px;
 }
 
+/* prototype.css stacks these into column 1 below 1300px/1120px; the deck keeps
+   its own breakpoints, so reset to auto placement (same fix as the model slide). */
 .results-example-slide .results-intro,
 .results-example-slide .incoherence-example-card {
+  grid-column: auto;
+  grid-row: auto;
+  min-width: 0;
   align-self: center;
 }
 
@@ -454,7 +557,7 @@ body.deck-page {
 
 .results-model-slide .results-summary-copy > p:not(.eyebrow) {
   position: relative;
-  min-height: calc(var(--deck-prose-size) * var(--deck-prose-leading) + 2 * var(--deck-finding-pad-y));
+  min-height: calc(var(--deck-point-size) * var(--deck-point-leading) + 2 * var(--deck-finding-pad-y));
   padding: var(--deck-finding-pad-y) 0 var(--deck-finding-pad-y) var(--deck-finding-label-w);
   border-bottom: 1px solid var(--border);
   color: var(--text-1);
@@ -525,20 +628,25 @@ body.deck-page {
   font-size: 18px;
 }
 
+/* Heading stays on the shared left-aligned system; only the statement and the
+   supporting row are centered as a block. */
 .upshot-slide .slide-plane {
-  grid-template-rows: auto 1fr auto;
-  place-items: center;
-  text-align: center;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  align-items: center;
+  justify-items: center;
 }
 
 .upshot-slide .editorial-section-heading {
   width: 100%;
 }
 
+/* Fixed width: the statement is Pretext-managed, so fit-content would chase
+   the nowrap line spans and balloon the plate. */
 .upshot-slide .upshot-statement {
-  width: min(900px, 100%);
+  width: min(780px, 100%);
   min-height: 0;
   align-self: center;
+  padding: 40px 48px;
 }
 
 .upshot-slide .upshot-statement strong {
@@ -548,6 +656,7 @@ body.deck-page {
 
 .upshot-slide .editorial-copy {
   width: min(760px, 100%);
+  text-align: left;
 }
 
 .links-slide .slide-plane {
@@ -556,6 +665,8 @@ body.deck-page {
 
 .prototype-c #c-links .editorial-copy {
   width: min(700px, 100%);
+  justify-self: center;
+  text-align: left;
 }
 
 .prototype-c #c-links .research-links {
@@ -569,6 +680,12 @@ body.deck-page {
 
 .prototype-c #c-links .paper-link-primary strong {
   font-size: 42px;
+}
+
+.prototype-c #c-links .research-links-secondary a {
+  min-height: 104px;
+  gap: 10px;
+  padding: 16px 18px;
 }
 
 .prototype-c #c-ladder-example,
@@ -665,8 +782,27 @@ body.deck-page {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  /* Stacked layouts use intrinsic rows; the fitter scales the whole slide.
+     Fractional rows squash their tracks and let centered content overlap the
+     heading and neighbouring panels. */
+  .slide-plane,
+  .prototype-c #c-overview .slide-plane,
+  .prototype-c #c-coherence .slide-plane,
+  .prototype-c #c-comparison .slide-plane,
+  .prototype-c #c-results .slide-plane,
+  .ladder-method-slide .slide-plane,
+  .ladder-example-slide .slide-plane,
+  .results-example-slide .slide-plane,
+  .results-model-slide .slide-plane,
+  .upshot-slide .slide-plane,
+  .links-slide .slide-plane {
+    grid-template-rows: none;
+    grid-auto-rows: auto;
+    align-content: center;
+    align-items: start;
+  }
+
   .slide-plane {
-    grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr);
     gap: 16px;
   }
 
@@ -691,7 +827,8 @@ body.deck-page {
   }
 
   .results-model-slide .results-model-story {
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-auto-rows: auto;
   }
 
   .results-model-slide .strict-mono-card {
@@ -710,11 +847,30 @@ body.deck-page {
   :root {
     --deck-controls-h: 54px;
     --deck-pad-x: 18px;
-    --deck-pad-y: 16px;
+    --deck-pad-y: 12px;
+    --deck-finding-pad-y: 6px;
   }
 
   .slide-plane {
-    gap: 11px;
+    gap: 9px;
+  }
+
+  .animated-fixed-comparison {
+    min-height: 0;
+  }
+
+  .animated-tier-viewport {
+    height: 128px;
+  }
+
+  .animated-tier-face img,
+  .animated-alligator-side img {
+    width: 64px;
+  }
+
+  .monotonicity-example-card .result-curve,
+  .monotonic-y-axis {
+    height: 96px;
   }
 
   .prototype-c .editorial-section-heading {
@@ -755,12 +911,12 @@ body.deck-page {
     min-height: 300px;
   }
 
-  .prototype-c .coherence-forced-choice-copy > p:not(.eyebrow) {
+  .prototype-c .slide-points > p:not(.eyebrow) {
     min-height: 48px;
     padding: 8px 0 8px 50px;
   }
 
-  .coherence-forced-choice-copy > p::before {
+  .slide-points > p::before {
     top: 5px;
     width: 36px;
     height: 36px;
@@ -768,13 +924,6 @@ body.deck-page {
 
   .cycle-node-a {
     top: 84px;
-  }
-
-  .ladder-method-slide .slide-plane,
-  .ladder-example-slide .slide-plane,
-  .results-example-slide .slide-plane,
-  .links-slide .slide-plane {
-    grid-template-rows: auto minmax(0, 1fr);
   }
 
   .tier-order-item {
@@ -813,7 +962,11 @@ body.deck-page {
   .results-model-slide .strict-mono-row {
     grid-template-columns: 112px minmax(86px, 1fr) 39px;
     gap: 6px;
-    min-height: 19px;
+    min-height: 17px;
+  }
+
+  .results-model-slide .strict-mono-chart {
+    gap: 2px;
   }
 
   .results-model-slide .strict-mono-scale {
@@ -902,7 +1055,10 @@ body.deck-page {
   .prototype-c #c-coherence .slide-plane,
   .prototype-c #c-comparison .slide-plane {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-auto-rows: auto;
+    align-content: center;
+    align-items: center;
   }
 
   .ladder-method-slide .slide-plane,
@@ -933,13 +1089,12 @@ body.deck-page {
     font-size: 24px;
   }
 
-  .prototype-c .coherence-forced-choice-copy > p:not(.eyebrow) {
+  .prototype-c .slide-points > p:not(.eyebrow) {
     min-height: 44px;
     padding: 5px 0 5px 48px;
-    line-height: 1.28;
   }
 
-  .coherence-forced-choice-copy > p::before {
+  .slide-points > p::before {
     top: 2px;
     width: 34px;
     height: 34px;
@@ -1066,6 +1221,20 @@ body.deck-page {
 
   .results-model-slide .results-summary-copy {
     align-self: center;
+  }
+
+  .ladder-method-copy > .tier-order-strip,
+  .ladder-method-copy > .ladder-consistency-card {
+    margin-block: 6px;
+  }
+
+  .ladder-consistency-card {
+    min-height: 60px;
+    padding: 8px 14px;
+  }
+
+  .ladder-consistency-card strong {
+    font-size: 30px;
   }
 
   .deck-control {

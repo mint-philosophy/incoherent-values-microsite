@@ -132,9 +132,11 @@ function preparePretextTargets() {
   ].join(','));
 
   state.pretextTargets = Array.from(candidates).filter((element) => {
+    if (element.hasAttribute('data-pretext-native')) return false;
     if (element.children.length > 0) return false;
     const text = element.textContent.trim();
-    if (!text || (text.length < 28 && !element.matches('h1, h2, h3'))) return false;
+    const isSlidePoint = element.matches('.slide-points > p');
+    if (!text || (text.length < 28 && !element.matches('h1, h2, h3') && !isSlidePoint)) return false;
     element.dataset.pretextText = text;
     element.classList.add('pretext-managed');
     return true;
@@ -489,8 +491,8 @@ function navigationCommandForKey(key) {
   return null;
 }
 
-function isInteractiveTarget(target) {
-  return Boolean(target.closest('a, button, input, textarea, select, [contenteditable="true"]'));
+function isEditingTarget(target) {
+  return Boolean(target.closest('input, textarea, select, [contenteditable="true"]'));
 }
 
 previousButton.addEventListener('click', previousSlide);
@@ -504,7 +506,9 @@ document.addEventListener('click', (event) => {
 });
 
 document.addEventListener('keydown', (event) => {
-  if (isInteractiveTarget(event.target)) return;
+  const target = event.target instanceof Element ? event.target : document.body;
+  const activatesControl = (event.key === ' ' || event.key === 'Enter') && target.closest('a, button');
+  if (isEditingTarget(target) || activatesControl) return;
   if (event.key === 'Escape' && window.parent !== window) {
     window.parent.postMessage({ type: 'mint-presentation-exit' }, window.location.origin);
     return;

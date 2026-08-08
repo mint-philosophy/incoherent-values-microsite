@@ -30,3 +30,6 @@ from it.
   merge the compatible runtime/extractor changes, regenerate `PAPER_LINKS`, and
   copy the current agent, publication-checklist, and visual-QA workflow files.
 - Complete the publication and visual-QA checklists before recommending release.
+- Before editing slide content, layout, typography, icons, or responsive behavior,
+  read and follow `STYLE_GUIDE.md`. Treat its component and QA contracts as
+  required; document any deliberate exception in `VISUAL_QA.md`.
