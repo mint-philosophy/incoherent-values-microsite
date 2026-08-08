@@ -1,6 +1,6 @@
 # Visual QA - Incoherent Values?
 
-- Date: `2026-08-08` (proportional-composition rework)
+- Date: `2026-08-08` (proportional-composition rework; conclusion reframed)
 - Revision: `main` working tree (uncommitted)
 - Browser: headless Google Chrome via Playwright 1.62.1
 - Reviewer: `Minty-7c785f5b`
@@ -45,6 +45,13 @@ fit applied) plus post-`load` settle passes, and the fit diagnostics now name
 the elements that set each content-bounds edge. The QA suite measures a
 deliberately settled pass and enforces the new proportion gates; its fixed
 `22px` typography assertions became unit-uniformity and leading-ratio checks.
+
+The conclusion slide was subsequently reframed to author-supplied copy (the
+constructive "surprisingly coherent / next steps" framing replacing the
+sceptical one), its bullet moving from `caution` to `result`. The statement
+plate widened to 44u and its display type is now bound by plate width as well
+as the unit (`min(1.85u, 5.2cqw)`), because at phone widths 1.85u set a
+~20-character measure with an unusable rag.
 
 Editorial paragraphs share the frame-derived unit size and 1.35 leading on
 every slide; the suite verifies that every point and findings row matches the

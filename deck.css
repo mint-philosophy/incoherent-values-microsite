@@ -875,20 +875,27 @@ body.deck-page {
 }
 
 .upshot-slide .upshot-statement {
-  width: min(100%, calc(var(--u) * 32));
+  width: min(100%, calc(var(--u) * 44));
   min-height: 0;
   align-self: center;
   padding: calc(var(--u) * 1.7) calc(var(--u) * 2);
 }
 
-.upshot-slide .upshot-statement strong {
+/* ID-level so prototype.css's px `max-width` cannot cap the measure: the
+   statement's line length is set by the plate, in units. */
+/* Display type is bound by the plate's width as well as the unit: on narrow
+   frames the plate is the column, and 1.85u there would set a ~20-character
+   measure with an unusable rag. */
+#c-upshot .upshot-statement strong {
   max-width: none;
-  font-size: calc(var(--u) * 2);
+  font-size: min(calc(var(--u) * 1.85), 5.2cqw);
   letter-spacing: 0;
 }
 
+/* Narrower than the plate on purpose: the plate carries display type, this
+   row carries reading type, and each is bound by its own measure. */
 .upshot-slide .editorial-copy {
-  width: min(100%, calc(var(--u) * 32));
+  width: min(100%, calc(var(--deck-measure) + var(--deck-point-gutter)));
   text-align: left;
 }
 

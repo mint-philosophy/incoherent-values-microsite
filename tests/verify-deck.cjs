@@ -173,7 +173,7 @@ async function slidePointContractIssues(frame) {
       'c-ladder': ['ladder', 'sequence', 'accurate', 'confirm'],
       'c-comparison': ['compare', 'trend', 'cycle'],
       'c-results': ['finding', 'example'],
-      'c-upshot': ['caution'],
+      'c-upshot': ['result'],
       'c-links': ['paper']
     };
     const issues = [];

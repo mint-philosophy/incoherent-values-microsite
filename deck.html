@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="prototype.css?v=20260807-deck">
-  <link rel="stylesheet" href="deck.css?v=20260808.2">
-  <script type="module" src="deck.js?v=20260808.2"></script>
+  <link rel="stylesheet" href="deck.css?v=20260808.8">
+  <script type="module" src="deck.js?v=20260808.8"></script>
 </head>
 <body class="deck-page">
   <a class="skip-link" href="#c-title-slide">Skip to slides</a>
@@ -42,12 +42,12 @@
           <div class="editorial-copy slide-points">
             <p data-point-icon="trust">To trust Large Language Models, we need to know how they will perform in novel situations.</p>
             <p data-point-icon="values" data-pretext-native>Some (e.g. <a data-paper-link="mazeika-values" hidden>Mazeika et al.</a>) think that when LLMs make choices, they are (increasingly) guided by coherent <em>values</em>. If this is true, it could be crucial for trusting LLMs' behaviour in novel situations.</p>
-            <p data-point-icon="test">We introduce a new way of testing how coherent an LLM's values are. It shows that LLMs' values are more incoherent than previously thought.</p>
+            <p data-point-icon="test">We introduce a new way of testing how coherent an LLM's values are. It shows that LLMs have some way to go to become fully coherent agents.</p>
           </div>
         </div>
 
         <aside class="model-headline-results" aria-labelledby="model-results-title">
-          <h3 class="model-chart-title" id="model-results-title">We observed significant, varied value incoherence.</h3>
+          <h3 class="model-chart-title" id="model-results-title">Results were surprising: LLMs both more coherent than one might expect given their training; but less coherent than the previous results from Mazeika et al. implied.</h3>
           <div class="model-result-chart mini-strict-mono-chart" role="table" aria-label="Selected highest and lowest strict-monotonicity results by model">
             <div class="model-result-chart-head" role="row"><span role="columnheader">Model</span><span role="columnheader">Strict monotonicity</span></div>
             <div class="model-result-row model-opus reasoning-on" role="row" style="--value: 80.1" aria-label="Opus-4.6, reasoning on, 80.1 percent">
@@ -342,10 +342,10 @@
           <h2>What this means</h2>
         </header>
         <div class="upshot-statement">
-          <strong>Coherent LLM values may be further away than we thought.</strong>
+          <strong>For stochastic systems, models are surprisingly coherent, especially with reasoning on.</strong>
         </div>
         <div class="editorial-copy slide-points">
-          <p data-point-icon="caution">Until future models perform closer to 100% on tests like ours, claims that they have emergent, coherent values should be treated with scepticism.</p>
+          <p data-point-icon="result">Next steps: make broad, reasonable coherence a target of training.</p>
         </div>
       </section>
 
