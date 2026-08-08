@@ -883,13 +883,29 @@ body.deck-page {
 
 /* ID-level so prototype.css's px `max-width` cannot cap the measure: the
    statement's line length is set by the plate, in units. */
-/* Display type is bound by the plate's width as well as the unit: on narrow
-   frames the plate is the column, and 1.85u there would set a ~20-character
-   measure with an unusable rag. */
+/* The statement's display type must live on the element Pretext measures.
+   prototype.css's `.upshot-statement span` rule was written for different
+   markup and otherwise repaints Pretext's generated `.pt-line` spans in a
+   different family and a vw-based size — so lines were measured in one font
+   and painted in another, and overflowed their column. Italic Newsreader is
+   only served at weight 400; asking for a heavier italic makes the browser
+   synthesise a face the canvas cannot measure. Display type is bound by plate
+   width as well as the unit: on narrow frames the plate is the column, and
+   1.85u there would set a ~20-character measure with an unusable rag. */
 #c-upshot .upshot-statement strong {
   max-width: none;
-  font-size: min(calc(var(--u) * 1.85), 5.2cqw);
+  font-family: var(--font-prose);
+  font-style: italic;
+  font-weight: 400;
+  font-size: min(calc(var(--u) * 1.62), 4.6cqw);
+  line-height: 1.22;
   letter-spacing: 0;
+  color: var(--text-bright);
+}
+
+#c-upshot .upshot-statement strong .pt-line {
+  font: inherit;
+  color: inherit;
 }
 
 /* Narrower than the plate on purpose: the plate carries display type, this
