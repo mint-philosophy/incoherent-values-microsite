@@ -9,13 +9,24 @@ the slide-layout code.
 - **JetBrains Mono is structural.** Use it for slide numbers, headings, labels,
   legends, controls, model names, and compact metadata.
 - **Newsreader is for reading.** Use it for sentences, explanatory points, and
-  other prose. Explanatory rows use one logical size: `22px / 1.35`.
+  other prose. Explanatory rows use one size: `1u / 1.35` (see the unit
+  contract below).
 - **Card and chart titles are a named middle tier.** The title of a visual
   (chart headline, statement card) is Newsreader semibold; the apparatus around
   it (disclosure labels, axes, scales, legends) is JetBrains Mono. Do not set a
   visual's title in mono or its axis labels in Newsreader.
-- **Do not size prose at breakpoints.** Pretext places lines at the logical type
-  size; the fitter scales the complete slide to the visible frame.
+- **The unit `--u` is the only size authority.** It derives from the frame via
+  container-query units (`clamp(13px, min(3.6cqh, 4.3cqw), 27px)`), and every
+  type size, icon, gutter, card padding, sprite, and chart row is a multiple of
+  it. Do not size anything in raw px at any breakpoint: at a given window the
+  whole deck reads at one apparent size, and the text:frame and text:graphic
+  proportions hold at every viewport. Pretext places lines at the computed
+  size; the fitter survives only as a safety net for very short or tiny
+  frames.
+- **Prose reads at a measure.** Text columns are `--deck-measure` (~60ch)
+  clamped inside a 26–56% band of the frame width; the measure wins inside the
+  band and the visual absorbs the remainder. Never let a grid fraction set a
+  text column's width on its own.
 - Preserve the existing light-first, restrained MINT palette and square-edged
   diagrams. Pixel art should explain the content, not fill empty space.
 
@@ -49,8 +60,8 @@ Use this component for every explanatory prose block:
 ```
 
 Rows have no arbitrary grid gap. Each row has equal vertical padding, a shared
-rule, the same Newsreader type, and a `40px` semantic pixel-art marker in a
-`56px` gutter. Consecutive rows share one rule. If a diagram interrupts a point
+rule, the same Newsreader type, and a `1.85u` semantic pixel-art marker in a
+`2.55u` gutter. Consecutive rows share one rule. If a diagram interrupts a point
 group, the next point begins a new ruled group.
 
 **A ruled row must contain a claim, not a segue.** Transitional one-liners
@@ -77,7 +88,7 @@ reviewed asset. Never assign icons randomly to vary the page.
 
 ## Findings rows
 
-Quantitative summaries use `.slide-findings`. They share the `22px / 1.35`
+Quantitative summaries use `.slide-findings`. They share the `1u / 1.35`
 Newsreader rhythm and equal ruled rows with `.slide-points`, but use concise
 JetBrains Mono `data-finding-label` labels instead of pictorial bullets. Labels
 must identify the finding's role, not merely number the lines.
@@ -99,6 +110,15 @@ must identify the finding's role, not merely number the lines.
 - A slide is one visible frame in both the MINT shell and presentation mode.
 - The frame's banner, sidebar, status bar, controls, and iframe dimensions all
   count against the available space.
+- Composition is proportional, not canvas-fixed: at composed aspects every
+  slide fits at scale ~1 and the QA suite gates the fitted-scale spread
+  (≤1.22 landscape, ≤1.45 portrait) and the text band's share of frame width.
+  Very short or tiny windows are declared safety-net territory where the
+  fitter legitimately works harder.
+- Absolutely-composed visuals (the preference cycle, the animated comparison)
+  are em-driven from `--u` so their interiors scale with the type; never mix
+  px geometry from prototype.css into them — pin every geometry-affecting
+  property (including `transform`) when overriding.
 - Prefer intrinsic grid rows for stacked portrait layouts. Never let a child
   escape its declared panel to make the parent appear to fit.
 - Fractional (`minmax(0, 1fr)`) rows must never end up smaller than their

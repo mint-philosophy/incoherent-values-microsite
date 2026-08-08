@@ -22,7 +22,8 @@ const state = {
   preparedCache: new Map(),
   pretextTargets: [],
   touchStartX: null,
-  touchStartY: null
+  touchStartY: null,
+  emptyRetries: 0
 };
 
 window.__deckDiagnostics = {
@@ -241,6 +242,8 @@ function visibleContentBounds(slide) {
   };
   let found = false;
 
+  const edgeSetters = { top: null, right: null, bottom: null, left: null };
+  const describe = (element) => `${element.tagName.toLowerCase()}.${String(element.className).split(' ')[0] || ''}`;
   elements.forEach((element) => {
     if (element.closest('.ladder-tier-tooltip, .curve-guide-overlay, .animated-tier-face')) return;
     const style = getComputedStyle(element);
@@ -248,18 +251,23 @@ function visibleContentBounds(slide) {
     const rect = element.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) return;
     found = true;
-    bounds.top = Math.min(bounds.top, rect.top);
-    bounds.right = Math.max(bounds.right, rect.right);
-    bounds.bottom = Math.max(bounds.bottom, rect.bottom);
-    bounds.left = Math.min(bounds.left, rect.left);
+    if (rect.top < bounds.top) { bounds.top = rect.top; edgeSetters.top = describe(element); }
+    if (rect.right > bounds.right) { bounds.right = rect.right; edgeSetters.right = describe(element); }
+    if (rect.bottom > bounds.bottom) { bounds.bottom = rect.bottom; edgeSetters.bottom = describe(element); }
+    if (rect.left < bounds.left) { bounds.left = rect.left; edgeSetters.left = describe(element); }
   });
+  bounds.edgeSetters = edgeSetters;
 
   if (!found) {
+    // An empty measurement (mid-load, hidden subtree) cannot overflow; report
+    // zero-size bounds so a transient never locks the slide at minimum scale.
+    // The caller retries shortly, because this result is not trustworthy.
     return {
       top: slideRect.top,
-      right: slideRect.right,
-      bottom: slideRect.bottom,
-      left: slideRect.left
+      right: slideRect.left,
+      bottom: slideRect.top,
+      left: slideRect.left,
+      empty: true
     };
   }
   return bounds;
@@ -353,7 +361,9 @@ function fitSlide(slide) {
     contentTop: Math.round(result.content.top - frame.top),
     contentRight: Math.round(result.content.right - frame.left),
     contentBottom: Math.round(result.content.bottom - frame.top),
-    contentLeft: Math.round(result.content.left - frame.left)
+    contentLeft: Math.round(result.content.left - frame.left),
+    edgeSetters: result.content.edgeSetters || null,
+    measuredEmpty: Boolean(result.content.empty)
   };
 }
 
@@ -405,9 +415,16 @@ function drawCurveGuides() {
 }
 
 function fitAllSlides() {
-  window.__deckDiagnostics.slides = slides.map(fitSlide);
+  const results = slides.map(fitSlide);
+  window.__deckDiagnostics.slides = results;
   window.__deckDiagnostics.ready = true;
   window.__deckDiagnostics.current = state.index;
+  // Empty measurements come from resources landing mid-pass (fonts, images,
+  // shell sizing); their fits are provisional, so measure again shortly.
+  if (results.some((result) => result.measuredEmpty) && state.emptyRetries < 8) {
+    state.emptyRetries += 1;
+    setTimeout(scheduleFit, 180);
+  }
   requestAnimationFrame(drawCurveGuides);
 }
 
@@ -554,6 +571,12 @@ window.addEventListener('message', (event) => {
 
 window.addEventListener('hashchange', () => goToId(location.hash, { updateHash: false }));
 window.addEventListener('resize', scheduleFit);
+// Settle passes: re-fit once everything (fonts, images, shell sizing) has
+// landed, so a mid-load measurement never remains the final layout.
+window.addEventListener('load', () => {
+  scheduleFit();
+  setTimeout(scheduleFit, 600);
+});
 window.refitDeck = fitAllSlides;
 
 if ('ResizeObserver' in window) {

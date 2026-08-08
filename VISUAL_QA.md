@@ -1,7 +1,7 @@
 # Visual QA - Incoherent Values?
 
-- Date: `2026-08-07` (second pass, after the row-system bug-fix and polish work)
-- Revision: `codex/responsive-slide-deck` release candidate
+- Date: `2026-08-08` (proportional-composition rework)
+- Revision: `main` working tree (uncommitted)
 - Browser: headless Google Chrome via Playwright 1.62.1
 - Reviewer: `Minty-7c785f5b`
 
@@ -21,31 +21,37 @@ closed and open drawer, plus a full scroll to its final link.
 Additional passing viewports: `2560x1080`, `1366x768`, `820x1180`,
 `622x800`, `637x800`, `628x633`, `631x543`, `360x640`, and `667x375`.
 
-The minimum fitted scale across the matrix is `0.557` in the framed `360x640`
-case. All other tested cases fit at a larger scale. The QA script rejects any
-slide whose measured content escapes the iframe, any Pretext-managed block with
-horizontal overflow, any comparison chart that escapes its visual stack or
-overlaps the explanatory prose, and any collision among model-chart labels,
-bars, or values.
+The deck now composes proportionally: a frame-derived unit (`--u`, container
+query based) sizes all type, icons, gutters, sprites, and chart geometry, so
+every slide reads at one apparent size at a given window and the fitter is
+only a safety net. At composed aspects (ultrawide, full-HD, desktop) every
+slide fits at scale `1.0` in both framed and presentation modes; the minimum
+fitted scale across the whole matrix is `0.659` in the framed `360x640` case.
+The QA script rejects any slide whose measured content escapes the iframe, any
+Pretext-managed block with horizontal overflow, any comparison chart that
+escapes its visual stack or overlaps the explanatory prose, any collision
+among model-chart labels, bars, or values, any fitted-scale spread above
+`1.22` (landscape) / `1.45` (portrait) outside declared safety-net windows,
+and any two-column text band outside its 26-56% share of frame width.
 
-This pass fixed and re-verified: stacked portrait/landscape layouts now use
-intrinsic plane rows (fractional rows previously squashed their tracks and let
-centred content overprint the heading on phones); the results-example story
-resets its children to auto grid placement, so prototype.css's sub-1300px
-stacking rules no longer cram both panels into the left column; the `data-part`
-chip renders in the header's third grid column instead of wrapping under the
-index; and the vertical ladder sizes to content, so T1 can no longer escape the
-panel. Polish in the same pass: the heading on the upshot slide is left-aligned
-like every other slide and its statement plate hugs the quote; the overview
-mini chart gained the reasoning legend; the links slide's secondary cards are
-tighter; the comparison slide dropped its redundant one-line teaser row (now
-three rows — the QA contract was updated to match).
+This pass replaced the fixed-px sizing system with the proportional unit
+contract (see `STYLE_GUIDE.md`): measure-bound text columns (the ~60ch measure
+wins inside a 26-56% frame-width band), shared top/left datums with a pinned
+heading band, em-driven interiors for the preference-cycle and animated
+comparison visuals, and a `strict-mono`/ladder/consistency-card geometry that
+scales with the unit. deck.js gained bounded retries for empty mid-load
+measurements (fonts/images landing between fit passes previously left a stale
+fit applied) plus post-`load` settle passes, and the fit diagnostics now name
+the elements that set each content-bounds edge. The QA suite measures a
+deliberately settled pass and enforces the new proportion gates; its fixed
+`22px` typography assertions became unit-uniformity and leading-ratio checks.
 
-Editorial paragraphs use one fixed logical Newsreader size and leading across
-breakpoints. Pretext places the lines, then the fitter scales the complete slide.
-The model-results summary uses three evenly ruled rows with JetBrains Mono labels;
-the suite verifies equal font size, leading, margins, padding, and row spacing in
-both framed and presentation modes.
+Editorial paragraphs share the frame-derived unit size and 1.35 leading on
+every slide; the suite verifies that every point and findings row matches the
+deck-wide reference size at each viewport. The model-results summary uses
+three evenly ruled rows with JetBrains Mono labels; the suite verifies equal
+font size, leading, margins, padding, and row spacing in both framed and
+presentation modes.
 
 The coherence explanation is tested as four Pretext-managed, evenly ruled rows
 with equal type, leading, margins, padding, and visible pixel-art bullets. Its
@@ -80,7 +86,7 @@ animation without hiding information.
   to dark and back updates both surfaces and the remembered preference.
 - [x] The external-link runtime exposes nine link instances backed by five
   explicitly approved config entries; every target returned HTTP 200.
-- [x] Pretext 0.0.8 loads, waits for fonts, lays out 34 eligible text blocks, and
+- [x] Pretext 0.0.8 loads, waits for fonts, lays out 36 eligible text blocks, and
   emits complete `.pt-line` spans whose text matches each source block; the
   native fallback retains readable content when the module is unavailable. The
   suite also rejects any generated Pretext line that wraps again in the DOM.
@@ -89,7 +95,7 @@ animation without hiding information.
   (844x390), small-phone (360x640), and presentation-mode screenshots, in light
   theme throughout and dark theme at desktop.
 - [x] Browser console and local network responses have no errors.
-- [x] The publication owner reviewed the local candidate and authorized release.
+- [ ] The publication owner has reviewed the proportional-composition rework.
 
 ## Reproduction
 

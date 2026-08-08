@@ -77,6 +77,12 @@ async function diagnostics(frame) {
       && (result.pretext.status !== 'ready' || result.pretext.layoutRuns > 0)
       && result.config.status !== 'loading';
   });
+  // Fonts, images, and shell sizing can land after the last scheduled fit;
+  // measure a deliberate settled pass, not whichever pass ran last.
+  await frame.evaluate(() => new Promise((resolve) => {
+    window.refitDeck();
+    requestAnimationFrame(() => requestAnimationFrame(resolve));
+  }));
   return frame.evaluate(() => window.__deckDiagnostics);
 }
 
@@ -129,7 +135,15 @@ async function resultsSummaryTypographyIssues(frame) {
     const lineHeight = pixelValue(styles[0].lineHeight);
     const paddingTop = pixelValue(styles[0].paddingTop);
     const paddingBottom = pixelValue(styles[0].paddingBottom);
-    if (!nearlyEqual(fontSize, 22)) issues.push(`findings prose is ${fontSize}px instead of 22px`);
+    // Findings share the deck's unit-derived point size exactly.
+    const referencePoint = document.querySelector('.slide-points > p[data-point-icon]');
+    const referenceSize = referencePoint ? pixelValue(getComputedStyle(referencePoint).fontSize) : 0;
+    if (!nearlyEqual(fontSize, referenceSize, 0.2)) {
+      issues.push(`findings prose is ${fontSize}px but point rows are ${referenceSize}px`);
+    }
+    if (!nearlyEqual(lineHeight / fontSize, 1.35, 0.02)) {
+      issues.push(`findings leading ratio is ${(lineHeight / fontSize).toFixed(3)} instead of 1.35`);
+    }
     styles.forEach((style, index) => {
       if (!nearlyEqual(pixelValue(style.fontSize), fontSize)) issues.push(`row ${index + 1} font size differs`);
       if (!nearlyEqual(pixelValue(style.lineHeight), lineHeight)) issues.push(`row ${index + 1} line height differs`);
@@ -199,8 +213,16 @@ async function slidePointContractIssues(frame) {
         if (row.classList.contains('pretext-managed') && row.hasAttribute('data-pretext-native')) {
           issues.push(`${slideId}: row ${index + 1} has conflicting text-layout paths`);
         }
-        if (!nearlyEqual(pixelValue(style.fontSize), 22)) issues.push(`${slideId}: row ${index + 1} is not 22px`);
-        if (!nearlyEqual(pixelValue(style.lineHeight), 29.7, 0.2)) issues.push(`${slideId}: row ${index + 1} leading changed`);
+        const rowSize = pixelValue(style.fontSize);
+        const rowLeading = pixelValue(style.lineHeight);
+        // One unit-derived size across every point row in the deck.
+        if (!window.__pointSizeReference) window.__pointSizeReference = rowSize;
+        if (!nearlyEqual(rowSize, window.__pointSizeReference, 0.2)) {
+          issues.push(`${slideId}: row ${index + 1} is ${rowSize}px, deck reference is ${window.__pointSizeReference}px`);
+        }
+        if (!nearlyEqual(rowLeading / rowSize, 1.35, 0.02)) {
+          issues.push(`${slideId}: row ${index + 1} leading ratio changed`);
+        }
         if (!nearlyEqual(pixelValue(style.marginTop), 0) || !nearlyEqual(pixelValue(style.marginBottom), 0)) {
           issues.push(`${slideId}: row ${index + 1} has inherited margins`);
         }
@@ -259,7 +281,9 @@ async function coherenceCopyIssues(frame) {
     const lineHeight = pixelValue(styles[0].lineHeight);
     const paddingTop = pixelValue(styles[0].paddingTop);
     const paddingBottom = pixelValue(styles[0].paddingBottom);
-    if (!nearlyEqual(fontSize, 22)) issues.push(`coherence prose is ${fontSize}px instead of 22px`);
+    if (!nearlyEqual(lineHeight / fontSize, 1.35, 0.02)) {
+      issues.push(`coherence leading ratio is ${(lineHeight / fontSize).toFixed(3)} instead of 1.35`);
+    }
 
     rows.forEach((row, index) => {
       const style = styles[index];
@@ -309,6 +333,35 @@ async function comparisonLayoutIssues(frame) {
   });
 }
 
+// Proportional contract: on two-column compositions the text band must hold a
+// readable share of the frame width — neither a sliver nor a sprawl.
+async function textProportionIssues(frame) {
+  return frame.evaluate(() => {
+    const checks = [
+      ['c-overview', '.slide-points'],
+      ['c-coherence', '.coherence-forced-choice-copy'],
+      ['c-comparison', '#c-comparison .slide-points'],
+      ['c-results', '.results-intro'],
+      ['c-results-models', '.results-summary-copy']
+    ];
+    const deckWidth = document.getElementById('deck').getBoundingClientRect().width;
+    const issues = [];
+    checks.forEach(([slideId, selector]) => {
+      const slide = document.getElementById(slideId);
+      const block = slide?.querySelector(selector);
+      if (!block) {
+        issues.push(`${slideId}: text block missing`);
+        return;
+      }
+      const share = block.getBoundingClientRect().width / deckWidth;
+      if (share < 0.26 || share > 0.56) {
+        issues.push(`${slideId}: text band is ${(share * 100).toFixed(1)}% of frame width`);
+      }
+    });
+    return issues;
+  });
+}
+
 async function verifyViewport(browser, baseUrl, viewport) {
   const page = await browser.newPage({ viewport });
   const pageErrors = [];
@@ -345,6 +398,27 @@ async function verifyViewport(browser, baseUrl, viewport) {
       [],
       `${viewport.name}: explanatory-row style contract drift`
     );
+
+    // The deck must read at one apparent size: fitted scales stay near 1 and
+    // near each other. Portrait stacks get more slack than composed aspects.
+    const fittedScales = result.slides.map((slide) => slide.scale);
+    const scaleSpread = Math.max(...fittedScales) / Math.min(...fittedScales);
+    // Short or tiny windows are safety-net territory: the floor-clamped type
+    // cannot hold intrinsic stacks uniformly, so the fitter legitimately works
+    // harder there. Composed aspects stay tightly gated.
+    const safetyNetWindow = viewport.height < 480 || viewport.width < 420;
+    const spreadLimit = safetyNetWindow ? 1.6 : (viewport.width > viewport.height ? 1.22 : 1.45);
+    assert(
+      scaleSpread <= spreadLimit,
+      `${viewport.name}: fitted-scale spread ${scaleSpread.toFixed(3)} exceeds ${spreadLimit} (${JSON.stringify(fittedScales)})`
+    );
+    if (viewport.width > 900 && viewport.width > viewport.height) {
+      assert.deepEqual(
+        await textProportionIssues(frame),
+        [],
+        `${viewport.name}: text-band proportion drift`
+      );
+    }
 
     const deckBounds = await frame.locator('#deck').evaluate((element) => {
       const rect = element.getBoundingClientRect();
