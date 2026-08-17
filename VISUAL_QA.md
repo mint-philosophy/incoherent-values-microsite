@@ -1,13 +1,13 @@
 # Visual QA - Incoherent Values?
 
-- Date: `2026-08-08` (proportional-composition rework; conclusion reframed)
+- Date: `2026-08-17` (merged value-ladder method and example)
 - Revision: `main` working tree (uncommitted)
 - Browser: headless Google Chrome via Playwright 1.62.1
 - Reviewer: `Minty-7c785f5b`
 
 ## Viewport, theme, and navigation matrix
 
-The automated suite checks all ten slides in both framed and presentation modes.
+The automated suite checks all nine slides in both framed and presentation modes.
 Desktop rows include expanded and collapsed sidebars. Mobile rows include the
 closed and open drawer, plus a full scroll to its final link.
 
@@ -25,8 +25,9 @@ The deck now composes proportionally: a frame-derived unit (`--u`, container
 query based) sizes all type, icons, gutters, sprites, and chart geometry, so
 every slide reads at one apparent size at a given window and the fitter is
 only a safety net. At composed aspects (ultrawide, full-HD, desktop) every
-slide fits at scale `1.0` in both framed and presentation modes; the minimum
-fitted scale across the whole matrix is `0.659` in the framed `360x640` case.
+slide fits near scale `1.0` in composed desktop modes; the minimum framed
+scale across the whole matrix is `0.639` in the `360x640` case, and the minimum
+presentation-mode scale is `0.625` in the medium-portrait cases.
 The QA script rejects any slide whose measured content escapes the iframe, any
 Pretext-managed block with horizontal overflow, any comparison chart that
 escapes its visual stack or overlaps the explanatory prose, any collision
@@ -61,8 +62,15 @@ font size, leading, margins, padding, and row spacing in both framed and
 presentation modes.
 
 The coherence explanation is tested as four Pretext-managed, evenly ruled rows
-with equal type, leading, margins, padding, and visible pixel-art bullets. Its
+with equal type, leading, margins, padding, and visible image-free markers. Its
 diagram, heading, and copy must remain collision-free at every viewport.
+
+The value-ladder method and happiness example now share one composition. The
+method copy remains on the left at composed widths, the labelled seven-tier
+example remains on the right with a compact column gutter, and portrait layouts
+stack the same two panels. The example uses the same framed disclosure-and-title
+hierarchy as the later illustrative-example cards. Every ladder row exposes its
+full outcome on hover or keyboard focus.
 
 ## Motion and animation matrix
 
@@ -93,7 +101,7 @@ animation without hiding information.
   to dark and back updates both surfaces and the remembered preference.
 - [x] The external-link runtime exposes nine link instances backed by five
   explicitly approved config entries; every target returned HTTP 200.
-- [x] Pretext 0.0.8 loads, waits for fonts, lays out 36 eligible text blocks, and
+- [x] Pretext 0.0.8 loads, waits for fonts, lays out the eligible text blocks, and
   emits complete `.pt-line` spans whose text matches each source block; the
   native fallback retains readable content when the module is unavailable. The
   suite also rejects any generated Pretext line that wraps again in the DOM.

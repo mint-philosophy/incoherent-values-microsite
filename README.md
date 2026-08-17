@@ -11,7 +11,8 @@ Source of record: [arXiv:2606.21102](https://arxiv.org/abs/2606.21102).
 The site has no build step. Its files are separated by responsibility so that
 content edits do not require changing the responsive frame:
 
-- `deck.html` contains the ten slides. Each top-level `<section>` is one slide.
+- `deck.html` contains the nine slides. Each top-level `.editorial-slide`
+  `<section>` is one slide.
 - `paper.config.json` is the source of truth for the paper title, subtitle,
   authors, and approved external URLs. A URL renders only when
   `approvedForPublication` is exactly `true`.
@@ -38,7 +39,7 @@ switch to dark, and that explicit choice is remembered in `localStorage` under
 light and clears the old automatically stored dark default.
 
 Explanatory prose follows one logical type contract in `deck.css`: `slide-points`
-uses Newsreader at `22px / 1.35`, equal ruled rows, and semantic pixel-art bullets.
+uses unit-derived Newsreader type at `1 / 1.35`, equal ruled rows, and solid MINT-square markers.
 Pretext places eligible lines, and the slide fitter uniformly scales the complete
 slide. Do not add breakpoint-specific prose sizes. The model-results slide uses
 the matching `slide-findings` row variant, where `data-finding-label` supplies the
@@ -69,7 +70,7 @@ npm run qa
 ```
 
 The suite validates the HTML, starts its own local server, and uses headless
-Chrome. It checks all ten slides in framed and presentation modes at desktop,
+Chrome. It checks all nine slides in framed and presentation modes at desktop,
 ultrawide, tablet, intermediate portrait, portrait-phone, and landscape-phone
 sizes. It also checks Pretext-generated line output, structured links, direct
 hashes, Previous/Next and shell/deck keyboard navigation, theme changes,

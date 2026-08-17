@@ -60,31 +60,18 @@ Use this component for every explanatory prose block:
 ```
 
 Rows have no arbitrary grid gap. Each row has equal vertical padding, a shared
-rule, the same Newsreader type, and a `1.85u` semantic pixel-art marker in a
-`2.55u` gutter. Consecutive rows share one rule. If a diagram interrupts a point
+rule, the same Newsreader type, and a compact, non-pictorial MINT marker in a
+`1.2u` gutter. Consecutive rows share one rule. If a diagram interrupts a point
 group, the next point begins a new ruled group.
 
 **A ruled row must contain a claim, not a segue.** Transitional one-liners
 either merge into the preceding row or are cut; do not spend a rule and a
 marker on a sentence whose content the next slide's title already states.
 
-Use the existing `data-point-icon` vocabulary according to meaning. The keys
-are finer-grained than the artwork: they resolve to a small set of glyph
-families built from the deck's own sprites, and that is intentional — the
-bullets are recall anchors for the figures, not one-off illustrations. Do not
-hunt for a distinct asset per key or invent new compositions to vary the page:
-
-| Value | Meaning | Glyph family |
-|:--|:--|:--|
-| `trust`, `measure`, `accurate`, `confirm`, `result`, `paper` | MINT interpretation or conclusion | Minty squid ("the lab speaking") |
-| `values`, `order` | What an option is worth | Coins |
-| `choice` | A forced pairwise choice | Coin vs ice cream |
-| `test`, `cycle`, `finding`, `caution` | Incoherence and its detection | Coins + ice cream trio |
-| `ladder`, `sequence`, `trend` | Value-ladder construction or movement | Happiness-tier faces |
-| `compare`, `example` | Fixed comparisons or the alligator example | Face and/or alligator |
-
-Reuse or extend this vocabulary only with a semantic reason and an existing,
-reviewed asset. Never assign icons randomly to vary the page.
+Keep the existing `data-point-icon` values as stable editorial identifiers,
+but do not map them to pictures. Every explanatory row uses the same solid
+MINT square so the bullets support the reading rhythm rather than compete with
+the figures.
 
 ## Findings rows
 
@@ -132,7 +119,7 @@ must identify the finding's role, not merely number the lines.
 
 - Do not invent visible copy, summaries, claims, venue labels, or links.
 - Add external URLs only through publication-approved `paper.config.json` data.
-- Run `npm run qa` after every meaningful change. The suite must pass all ten
+- Run `npm run qa` after every meaningful change. The suite must pass all nine
   slides, both themes, framed and presentation modes, and all recorded viewports.
 - Visually inspect the changed slides at the reported problem size and at least
   one desktop, portrait-phone, and landscape-phone viewport.
