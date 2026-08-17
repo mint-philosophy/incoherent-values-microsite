@@ -18,8 +18,9 @@
   --deck-point-size: var(--u);
   --deck-point-leading: 1.35;
   --deck-point-pad-y: calc(var(--u) * 0.5);
-  --deck-point-icon-size: calc(var(--u) * 1.85);
-  --deck-point-gutter: calc(var(--u) * 2.55);
+  --deck-point-marker-width: calc(var(--u) * 0.46);
+  --deck-point-marker-height: calc(var(--u) * 0.46);
+  --deck-point-gutter: calc(var(--u) * 1.2);
   --deck-finding-label-w: calc(var(--u) * 3);
   --deck-finding-pad-y: calc(var(--u) * 0.45);
   /* Reading measure for prose columns (~60ch of Newsreader at 1u). */
@@ -240,89 +241,17 @@ body.deck-page {
 .slide-points > p::before {
   content: "";
   position: absolute;
-  top: var(--deck-point-pad-y);
-  left: 0;
-  width: var(--deck-point-icon-size);
-  height: var(--deck-point-icon-size);
-  border: 1px solid var(--border);
-  background-color: color-mix(in srgb, var(--bg-0) 82%, var(--accent) 18%);
-  background-repeat: no-repeat;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-}
-
-.slide-points > p[data-point-icon="trust"]::before,
-.slide-points > p[data-point-icon="measure"]::before,
-.slide-points > p[data-point-icon="accurate"]::before,
-.slide-points > p[data-point-icon="confirm"]::before,
-.slide-points > p[data-point-icon="result"]::before,
-.slide-points > p[data-point-icon="paper"]::before {
-  background-image: url("assets/minty-teal.png");
-  background-position: center;
-  background-size: 62% auto;
-}
-
-.slide-points > p[data-point-icon="values"]::before {
-  background-image:
-    url("assets/preference-cycle-options/generated-v2/coin-large/coin-large-03-32.png"),
-    url("assets/preference-cycle-options/generated-v2/coin-small/coin-small-03-32.png");
-  background-position: right 5% top 5%, left 5% bottom 5%;
-  background-size: 62% 62%, 52% 52%;
-}
-
-.slide-points > p[data-point-icon="test"]::before,
-.slide-points > p[data-point-icon="cycle"]::before,
-.slide-points > p[data-point-icon="finding"]::before,
-.slide-points > p[data-point-icon="caution"]::before {
-  background-image:
-    url("assets/preference-cycle-options/generated-v2/coin-large/coin-large-03-32.png"),
-    url("assets/preference-cycle-options/generated-v2/coin-small/coin-small-03-32.png"),
-    url("assets/preference-cycle-options/generated-v2/ice-cream/ice-cream-01-32.png");
-  background-position: center 5%, left 10% bottom 8%, right 10% bottom 8%;
-  background-size: 42% 42%, 42% 42%, 42% 42%;
-}
-
-.slide-points > p[data-point-icon="choice"]::before {
-  background-image:
-    url("assets/preference-cycle-options/generated-v2/coin-small/coin-small-03-32.png"),
-    url("assets/preference-cycle-options/generated-v2/ice-cream/ice-cream-01-32.png");
-  background-position: left 3% center, right 3% center;
-  background-size: 57% 57%, 57% 57%;
-}
-
-.slide-points > p[data-point-icon="order"]::before {
-  background-image: url("assets/preference-cycle-options/generated-v2/coin-large/coin-large-03-32.png");
-  background-position: center;
-  background-size: 80% 80%;
-}
-
-.slide-points > p[data-point-icon="ladder"]::before {
-  background-image: url("assets/human-happiness-a-t4-128.png");
-  background-position: center;
-  background-size: 85% 85%;
-}
-
-.slide-points > p[data-point-icon="sequence"]::before,
-.slide-points > p[data-point-icon="trend"]::before {
-  background-image:
-    url("assets/human-happiness-a-t1-weaker-128.png"),
-    url("assets/human-happiness-a-t7-128.png");
-  background-position: left 3% center, right 3% center;
-  background-size: 60% 60%, 60% 60%;
-}
-
-.slide-points > p[data-point-icon="compare"]::before {
-  background-image:
-    url("assets/human-happiness-a-t4-128.png"),
-    url("assets/alligator-saved-b-128.png");
-  background-position: left 3% center, right 3% center;
-  background-size: 60% 60%, 60% 60%;
-}
-
-.slide-points > p[data-point-icon="example"]::before {
-  background-image: url("assets/alligator-saved-b-128.png");
-  background-position: center;
-  background-size: 85% 85%;
+  top: calc(
+    var(--deck-point-pad-y)
+    + (var(--deck-point-size) * var(--deck-point-leading) - var(--deck-point-marker-height)) / 2
+  );
+  left: calc(var(--u) * 0.08);
+  width: var(--deck-point-marker-width);
+  height: var(--deck-point-marker-height);
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 0;
+  background: var(--accent);
 }
 
 .pt-line {
@@ -369,6 +298,73 @@ body.deck-page {
   min-height: calc(var(--u) * 1.7);
   padding: calc(var(--u) * 0.28) calc(var(--u) * 0.55);
   font-size: calc(var(--u) * 0.46);
+}
+
+.deck-title-slide .title-next-cue {
+  min-height: calc(var(--u) * 1.85);
+  max-width: min(100%, calc(var(--u) * 34));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: calc(var(--u) * 0.2) calc(var(--u) * 0.55);
+  margin-top: calc(var(--u) * 0.18);
+  padding: calc(var(--u) * 0.32) calc(var(--u) * 0.7);
+  border: 1px solid var(--accent-dim);
+  border-left: calc(var(--u) * 0.16) solid var(--accent);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--accent-soft) 72%, var(--bg-0));
+  color: var(--accent);
+  font-family: var(--font-ui);
+  font-size: calc(var(--u) * 0.48);
+  line-height: 1.25;
+  text-align: center;
+  transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
+}
+
+.deck-title-slide .title-next-cue-action {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--u) * 0.28);
+  font-weight: 700;
+}
+
+.deck-title-slide .title-next-cue-arrow {
+  min-width: calc(var(--u) * 1.05);
+  height: calc(var(--u) * 1.05);
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--bg-0);
+  font-size: calc(var(--u) * 0.62);
+  line-height: 1;
+  transition: transform 0.16s ease;
+}
+
+.deck-title-slide .title-next-cue-help {
+  color: var(--text-2);
+  font-size: calc(var(--u) * 0.4);
+  font-weight: 500;
+}
+
+.deck-title-slide .title-next-cue:hover,
+.deck-title-slide .title-next-cue:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-bright);
+  outline: none;
+}
+
+.deck-title-slide .title-next-cue:focus-visible {
+  box-shadow: 0 0 0 calc(var(--u) * 0.1) var(--bg-0),
+              0 0 0 calc(var(--u) * 0.18) var(--accent);
+}
+
+.deck-title-slide .title-next-cue:hover .title-next-cue-arrow,
+.deck-title-slide .title-next-cue:focus-visible .title-next-cue-arrow {
+  transform: translateX(calc(var(--u) * 0.12));
 }
 
 /* Text columns are measure-bound: the reading measure wins inside a 34-48%
@@ -546,7 +542,6 @@ body.deck-page {
 }
 
 .ladder-method-slide .slide-plane,
-.ladder-example-slide .slide-plane,
 .results-model-slide .slide-plane,
 .upshot-slide .slide-plane,
 .links-slide .slide-plane {
@@ -559,12 +554,26 @@ body.deck-page {
   align-content: center;
 }
 
-/* Shared left datum: the copy column starts at the heading's left edge and
-   holds the reading measure; the right margin is deliberate. */
+/* The method and its worked example form one composition: prose on the left,
+   the labelled happiness ladder on the right. */
+.ladder-merged-layout {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  align-items: center;
+  gap: calc(var(--u) * 0.45);
+}
+
 .ladder-method-slide .editorial-copy {
-  width: min(100%, calc(var(--deck-measure) + var(--deck-point-gutter) + var(--u) * 4));
-  justify-self: center;
+  width: 100%;
+  max-width: none;
+  justify-self: stretch;
   align-self: center;
+}
+
+.value-ladders-emphasis {
+  color: var(--blue);
+  font-weight: 600;
 }
 
 .ladder-method-copy > .tier-order-strip,
@@ -593,45 +602,146 @@ body.deck-page {
   font-size: calc(var(--u) * 0.8);
 }
 
-/* The ladder sizes to its content in units; the fitter is only a safety net. */
-.ladder-example-slide .vertical-ladder {
-  width: min(100%, calc(var(--u) * 58));
-  height: auto;
-  min-height: 0;
-  justify-self: center;
+/* Compact worked example. Each summary remains one line; the full outcome is
+   available from the complete row by hover or keyboard focus. */
+.ladder-example-panel {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
   align-self: center;
-  padding: calc(var(--u) * 0.55) calc(var(--u) * 0.8);
+  gap: calc(var(--u) * 0.18);
+  padding: calc(var(--u) * 0.55);
+  border: 1px solid var(--accent-dim);
+  background: var(--bg-0);
 }
 
-.ladder-example-slide .vertical-ladder ol {
+.ladder-example-disclosure {
+  width: fit-content;
+  margin: 0;
+  color: var(--yellow);
+  font: 600 calc(var(--u) * 0.42)/1.1 var(--font-ui);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ladder-example-title {
+  margin: 0 0 calc(var(--u) * 0.22);
+  color: var(--text-bright);
+  font: 500 calc(var(--u) * 1)/1.18 var(--font-prose);
+  letter-spacing: 0;
+}
+
+.ladder-method-slide .vertical-ladder {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  justify-self: stretch;
+  align-self: center;
+  padding: 0;
+  border: 0;
+}
+
+.ladder-method-slide .vertical-ladder ol {
   height: auto;
   display: grid;
   grid-auto-rows: auto;
-  gap: calc(var(--u) * 0.2);
+  gap: calc(var(--u) * 0.16);
 }
 
-.ladder-example-slide .ladder-tier {
+.ladder-method-slide .ladder-tier {
   min-height: 0;
   height: auto;
-  grid-template-columns: calc(var(--u) * 2.7) calc(var(--u) * 2.2) minmax(0, 1fr);
-  gap: calc(var(--u) * 0.45);
-  padding-block: calc(var(--u) * 0.22);
+  grid-template-columns: calc(var(--u) * 2.25) calc(var(--u) * 1.8) minmax(0, 1fr);
+  gap: calc(var(--u) * 0.32);
+  padding: calc(var(--u) * 0.17) calc(var(--u) * 0.38) calc(var(--u) * 0.17) calc(var(--u) * 0.2);
+  cursor: help;
+  outline: none;
 }
 
-.ladder-example-slide .ladder-tier img {
-  width: calc(var(--u) * 2.5);
+.ladder-method-slide .ladder-tier:hover,
+.ladder-method-slide .ladder-tier:focus-visible {
+  border-color: var(--accent-dim);
+  background: color-mix(in srgb, var(--bg-1) 86%, var(--accent) 14%);
 }
 
-.ladder-example-slide .ladder-tier-description {
+.ladder-method-slide .ladder-tier-original:hover,
+.ladder-method-slide .ladder-tier-original:focus-visible {
+  border-color: var(--yellow);
+}
+
+.ladder-method-slide .ladder-tier:focus-visible {
+  box-shadow: 0 0 0 calc(var(--u) * 0.08) var(--bg-0),
+              0 0 0 calc(var(--u) * 0.16) var(--accent);
+}
+
+.ladder-method-slide .ladder-tier:hover,
+.ladder-method-slide .ladder-tier:focus,
+.ladder-method-slide .ladder-tier:focus-within {
+  z-index: 6;
+}
+
+.ladder-method-slide .ladder-tier img {
+  width: calc(var(--u) * 2.05);
+}
+
+.ladder-method-slide .ladder-tier-description {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  font-size: calc(var(--u) * 0.68);
+}
+
+.ladder-tier-summary {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+.ladder-method-slide .ladder-tier-more {
+  width: auto;
+  min-height: 0;
+  flex: 0 0 auto;
+  margin: 0 0 0 calc(var(--u) * 0.08);
+  padding: 0;
+  color: var(--accent);
   font-size: calc(var(--u) * 0.8);
+  line-height: 0.7;
 }
 
-.ladder-example-slide .ladder-tier-marker strong {
+.ladder-method-slide .ladder-tier-marker strong {
   font-size: calc(var(--u) * 0.62);
 }
 
-.ladder-example-slide .ladder-tier-marker span {
+.ladder-method-slide .ladder-tier-marker span {
   font-size: calc(var(--u) * 0.38);
+}
+
+.ladder-method-slide .ladder-tier-tooltip {
+  right: 0;
+  bottom: calc(100% + var(--u) * 0.28);
+  width: min(calc(var(--u) * 21), 72cqw);
+  padding: calc(var(--u) * 0.42) calc(var(--u) * 0.52);
+  border-color: var(--accent-dim);
+  font-size: calc(var(--u) * 0.62);
+  line-height: 1.35;
+  box-shadow: calc(var(--u) * 0.18) calc(var(--u) * 0.18) 0
+    color-mix(in srgb, var(--accent) 18%, transparent);
+  transform: translateY(calc(var(--u) * 0.14));
+}
+
+.ladder-method-slide .ladder-tier:nth-child(-n + 2) .ladder-tier-tooltip {
+  top: calc(100% + var(--u) * 0.28);
+  bottom: auto;
+  transform: translateY(calc(var(--u) * -0.14));
+}
+
+.ladder-method-slide .ladder-tier:hover .ladder-tier-tooltip,
+.ladder-method-slide .ladder-tier:focus .ladder-tier-tooltip,
+.ladder-method-slide .ladder-tier:focus-within .ladder-tier-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
 }
 
 .prototype-c #c-comparison .slide-plane {
@@ -960,7 +1070,6 @@ body.deck-page {
   font-size: calc(var(--u) * 1.1);
 }
 
-.prototype-c #c-ladder-example,
 .prototype-c #c-results-models,
 .prototype-c #c-links {
   background: var(--bg-0);
@@ -1058,7 +1167,6 @@ body.deck-page {
   .prototype-c #c-comparison .slide-plane,
   .prototype-c #c-results .slide-plane,
   .ladder-method-slide .slide-plane,
-  .ladder-example-slide .slide-plane,
   .results-example-slide .slide-plane,
   .results-model-slide .slide-plane,
   .upshot-slide .slide-plane,
@@ -1099,6 +1207,53 @@ body.deck-page {
   .prototype-c #c-comparison .slide-plane {
     grid-template-rows: auto auto auto;
     align-content: start;
+  }
+
+  .ladder-merged-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: calc(var(--u) * 0.65);
+  }
+
+  .ladder-method-slide {
+    --deck-point-pad-y: calc(var(--u) * 0.4);
+  }
+
+  .ladder-method-copy > .tier-order-strip,
+  .ladder-method-copy > .ladder-consistency-card {
+    margin-block: calc(var(--u) * 0.25);
+  }
+
+  .ladder-method-slide .ladder-consistency-card {
+    min-height: calc(var(--u) * 2.8);
+  }
+
+  .ladder-example-panel {
+    width: 100%;
+    justify-self: stretch;
+    gap: calc(var(--u) * 0.1);
+    padding: calc(var(--u) * 0.3);
+  }
+
+  .ladder-example-disclosure {
+    font-size: calc(var(--u) * 0.34);
+  }
+
+  .ladder-example-title {
+    margin-bottom: calc(var(--u) * 0.1);
+    font-size: calc(var(--u) * 0.78);
+  }
+
+  .ladder-method-slide .vertical-ladder {
+    padding-block: 0;
+  }
+
+  .ladder-method-slide .ladder-tier {
+    grid-template-columns: calc(var(--u) * 2) calc(var(--u) * 1.65) minmax(0, 1fr);
+    padding-block: calc(var(--u) * 0.11);
+  }
+
+  .ladder-method-slide .ladder-tier img {
+    width: calc(var(--u) * 1.68);
   }
 }
 
@@ -1154,7 +1309,6 @@ body.deck-page {
   }
 
   .ladder-method-slide .slide-plane,
-  .ladder-example-slide .slide-plane,
   .results-model-slide .slide-plane,
   .upshot-slide .slide-plane,
   .links-slide .slide-plane {

@@ -6,6 +6,7 @@ const { spawn } = require('node:child_process');
 const { chromium } = require('playwright');
 
 const ROOT = path.resolve(__dirname, '..');
+const PYTHON_COMMAND = process.platform === 'win32' ? 'python' : 'python3';
 const VIEWPORTS = [
   { name: 'ultrawide', width: 2560, height: 1080 },
   { name: 'full-hd', width: 1920, height: 1080 },
@@ -53,7 +54,7 @@ async function launchPreview() {
     return { baseUrl: process.env.DECK_BASE_URL.replace(/\/$/, ''), server: null };
   }
   const port = await freePort();
-  const server = spawn('python3', ['-m', 'http.server', String(port), '--bind', '127.0.0.1'], {
+  const server = spawn(PYTHON_COMMAND, ['-m', 'http.server', String(port), '--bind', '127.0.0.1'], {
     cwd: ROOT,
     stdio: ['ignore', 'ignore', 'pipe']
   });
@@ -205,7 +206,10 @@ async function slidePointContractIssues(frame) {
         const markerStyle = getComputedStyle(row, '::before');
         const previousIsPoint = row.previousElementSibling?.matches('p[data-point-icon]') || false;
         if (row.dataset.pointIcon !== expectedIcons[index]) issues.push(`${slideId}: row ${index + 1} icon changed`);
-        if (markerStyle.backgroundImage === 'none') issues.push(`${slideId}: row ${index + 1} marker is missing`);
+        if (markerStyle.backgroundImage !== 'none') issues.push(`${slideId}: row ${index + 1} marker still uses an image`);
+        if (!pixelValue(markerStyle.width) || pixelValue(markerStyle.width) >= pixelValue(style.fontSize)) {
+          issues.push(`${slideId}: row ${index + 1} marker is missing or oversized`);
+        }
         if (row.querySelector('br')) issues.push(`${slideId}: row ${index + 1} contains a manual line break`);
         if (!row.classList.contains('pretext-managed') && !row.hasAttribute('data-pretext-native')) {
           issues.push(`${slideId}: row ${index + 1} has no declared text-layout path`);
@@ -288,7 +292,11 @@ async function coherenceCopyIssues(frame) {
     rows.forEach((row, index) => {
       const style = styles[index];
       if (row.dataset.pointIcon !== expectedIcons[index]) issues.push(`row ${index + 1} icon changed`);
-      if (getComputedStyle(row, '::before').backgroundImage === 'none') issues.push(`row ${index + 1} icon is missing`);
+      const markerStyle = getComputedStyle(row, '::before');
+      if (markerStyle.backgroundImage !== 'none') issues.push(`row ${index + 1} marker still uses an image`);
+      if (!pixelValue(markerStyle.width) || pixelValue(markerStyle.width) >= fontSize) {
+        issues.push(`row ${index + 1} marker is missing or oversized`);
+      }
       if (!row.classList.contains('pretext-managed')) issues.push(`row ${index + 1} is not managed by Pretext`);
       if (!nearlyEqual(pixelValue(style.fontSize), fontSize)) issues.push(`row ${index + 1} font size differs`);
       if (!nearlyEqual(pixelValue(style.lineHeight), lineHeight)) issues.push(`row ${index + 1} line height differs`);
@@ -333,6 +341,70 @@ async function comparisonLayoutIssues(frame) {
   });
 }
 
+async function ladderMergedLayoutIssues(frame) {
+  return frame.evaluate(() => {
+    const layout = document.querySelector('#c-ladder .ladder-merged-layout')?.getBoundingClientRect();
+    const copy = document.querySelector('#c-ladder .ladder-method-copy')?.getBoundingClientRect();
+    const panel = document.querySelector('#c-ladder .ladder-example-panel')?.getBoundingClientRect();
+    const disclosureElement = document.querySelector('#c-ladder .ladder-example-disclosure');
+    const titleElement = document.querySelector('#c-ladder .ladder-example-title');
+    const title = document.querySelector('#c-ladder .ladder-example-panel > h3')?.getBoundingClientRect();
+    const ladder = document.querySelector('#c-ladder .vertical-ladder')?.getBoundingClientRect();
+    const rows = Array.from(document.querySelectorAll('#c-ladder .ladder-tier'));
+    const emphasis = document.querySelector('#c-ladder .value-ladders-emphasis');
+    const result = document.querySelector('#c-ladder .ladder-consistency-card > strong');
+    const referenceDisclosure = document.querySelector('.monotonicity-example-disclosure');
+    const referenceTitle = document.querySelector('.monotonicity-example-title');
+    if (!layout || !copy || !panel || !disclosureElement || !titleElement || !title || !ladder
+        || rows.length !== 7 || !emphasis || !result || !referenceDisclosure || !referenceTitle) {
+      return ['merged ladder elements or seven example rows are missing'];
+    }
+
+    const within = (child, parent) => child.left >= parent.left - 0.5
+      && child.right <= parent.right + 0.5
+      && child.top >= parent.top - 0.5
+      && child.bottom <= parent.bottom + 0.5;
+    const overlaps = (first, second) => !(first.right <= second.left + 0.5
+      || second.right <= first.left + 0.5
+      || first.bottom <= second.top + 0.5
+      || second.bottom <= first.top + 0.5);
+    const issues = [];
+    const disclosureStyle = getComputedStyle(disclosureElement);
+    const titleStyle = getComputedStyle(titleElement);
+    const referenceDisclosureStyle = getComputedStyle(referenceDisclosure);
+    const referenceTitleStyle = getComputedStyle(referenceTitle);
+    if (!within(copy, layout)) issues.push('method copy escapes merged layout');
+    if (!within(panel, layout)) issues.push('example panel escapes merged layout');
+    if (overlaps(copy, panel)) issues.push('method copy overlaps example ladder');
+    if (overlaps(title, ladder)) issues.push('example label overlaps ladder');
+    if (copy.right <= panel.left && panel.left - copy.right > parseFloat(titleStyle.fontSize) * 0.7) {
+      issues.push('merged ladder column gap is too wide');
+    }
+    if (disclosureStyle.color !== referenceDisclosureStyle.color
+        || disclosureStyle.fontFamily !== referenceDisclosureStyle.fontFamily) {
+      issues.push('example disclosure does not match the later illustrative-example cards');
+    }
+    if (titleStyle.fontFamily !== referenceTitleStyle.fontFamily
+        || titleStyle.fontWeight !== referenceTitleStyle.fontWeight
+        || parseFloat(titleStyle.fontSize) <= parseFloat(disclosureStyle.fontSize) * 1.5) {
+      issues.push('example title does not match the later illustrative-example hierarchy');
+    }
+    if (parseFloat(getComputedStyle(document.querySelector('#c-ladder .ladder-example-panel')).borderTopWidth) < 1) {
+      issues.push('example ladder card frame is missing');
+    }
+    if (getComputedStyle(emphasis).color !== getComputedStyle(result).color) {
+      issues.push('value-ladders emphasis does not match the 97.3% blue');
+    }
+    if (!rows.every((row) => row.tabIndex === 0 && row.getAttribute('aria-describedby'))) {
+      issues.push('not every ladder row exposes keyboard-accessible detail');
+    }
+    if (!rows.every((row) => getComputedStyle(row.querySelector('.ladder-tier-summary')).whiteSpace === 'nowrap')) {
+      issues.push('ladder summaries are not held to one line');
+    }
+    return issues;
+  });
+}
+
 // Proportional contract: on two-column compositions the text band must hold a
 // readable share of the frame width — neither a sliver nor a sprawl.
 async function textProportionIssues(frame) {
@@ -340,6 +412,7 @@ async function textProportionIssues(frame) {
     const checks = [
       ['c-overview', '.slide-points'],
       ['c-coherence', '.coherence-forced-choice-copy'],
+      ['c-ladder', '.ladder-method-copy'],
       ['c-comparison', '#c-comparison .slide-points'],
       ['c-results', '.results-intro'],
       ['c-results-models', '.results-summary-copy']
@@ -386,7 +459,7 @@ async function verifyViewport(browser, baseUrl, viewport) {
     assert(frame, `${viewport.name}: deck iframe was not loaded`);
     const result = await diagnostics(frame);
 
-    assert.equal(result.slideCount, 10, `${viewport.name}: unexpected slide count`);
+    assert.equal(result.slideCount, 9, `${viewport.name}: unexpected slide count`);
     assert.equal(result.pretext.status, 'ready', `${viewport.name}: Pretext did not load`);
     assert(result.pretext.managedBlocks >= 20, `${viewport.name}: too few Pretext-managed blocks`);
     assert(result.pretext.layoutRuns > 0, `${viewport.name}: Pretext did not perform layout`);
@@ -397,6 +470,11 @@ async function verifyViewport(browser, baseUrl, viewport) {
       await slidePointContractIssues(frame),
       [],
       `${viewport.name}: explanatory-row style contract drift`
+    );
+    assert.deepEqual(
+      await ladderMergedLayoutIssues(frame),
+      [],
+      `${viewport.name}: merged ladder layout drift`
     );
 
     // The deck must read at one apparent size: fitted scales stay near 1 and
@@ -445,23 +523,23 @@ async function verifyViewport(browser, baseUrl, viewport) {
     assert(outer.scrollHeight <= outer.clientHeight, `${viewport.name}: outer vertical overflow`);
     assert.equal(outer.hash, '#c-results', `${viewport.name}: direct hash did not persist`);
 
-    assert.equal(await frame.locator('#deckCounter').textContent(), '7 / 10');
+    assert.equal(await frame.locator('#deckCounter').textContent(), '6 / 9');
     await page.locator('#presentationModeToggle').focus();
     await page.keyboard.press('ArrowRight');
-    await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '8 / 10');
+    await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '7 / 9');
     await page.keyboard.press('ArrowLeft');
-    await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '7 / 10');
+    await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '6 / 9');
     await frame.locator('#deck').focus();
     await page.keyboard.press('ArrowRight');
-    await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '8 / 10');
+    await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '7 / 9');
     await page.keyboard.press('ArrowLeft');
-    await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '7 / 10');
+    await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '6 / 9');
     await frame.locator('#deckNext').click();
-    assert.equal(await frame.locator('#deckCounter').textContent(), '8 / 10');
+    assert.equal(await frame.locator('#deckCounter').textContent(), '7 / 9');
     await page.keyboard.press('ArrowRight');
-    await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '9 / 10');
+    await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '8 / 9');
     await page.keyboard.press('ArrowLeft');
-    await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '8 / 10');
+    await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '7 / 9');
     assert.deepEqual(
       await resultsModelLayoutIssues(frame),
       [],
@@ -493,11 +571,22 @@ async function verifyViewport(browser, baseUrl, viewport) {
     });
     assert.deepEqual(rowOverlaps, [], `${viewport.name}: model chart labels overlap`);
     await frame.locator('#deckPrev').click();
-    assert.equal(await frame.locator('#deckCounter').textContent(), '7 / 10');
+    assert.equal(await frame.locator('#deckCounter').textContent(), '6 / 9');
     await frame.locator('body').press('Home');
-    assert.equal(await frame.locator('#deckCounter').textContent(), '1 / 10');
+    assert.equal(await frame.locator('#deckCounter').textContent(), '1 / 9');
+    const titleNextCue = frame.locator('.title-next-cue');
+    assert.equal(await titleNextCue.getAttribute('href'), '#c-overview', `${viewport.name}: title next-slide cue target changed`);
+    assert.match(
+      (await titleNextCue.textContent()).replace(/\s+/g, ' ').trim(),
+      /^Next slide → \(use arrow keys, or controls at bottom corners\)$/,
+      `${viewport.name}: title next-slide cue copy changed`
+    );
+    await titleNextCue.press('Enter');
+    assert.equal(await frame.locator('#deckCounter').textContent(), '2 / 9');
+    await frame.locator('body').press('Home');
+    assert.equal(await frame.locator('#deckCounter').textContent(), '1 / 9');
     await frame.locator('body').press('End');
-    assert.equal(await frame.locator('#deckCounter').textContent(), '10 / 10');
+    assert.equal(await frame.locator('#deckCounter').textContent(), '9 / 9');
 
     const approvedLinks = await frame.locator('[data-paper-link]:not([hidden])').evaluateAll((elements) => (
       elements.map((element) => ({ id: element.dataset.paperLink, href: element.href }))
@@ -529,8 +618,34 @@ async function verifyViewport(browser, baseUrl, viewport) {
     assert(pretextUsage.renderedLines >= pretextUsage.managedBlocks, `${viewport.name}: Pretext did not emit line spans`);
     assert.deepEqual(pretextUsage.incomplete, [], `${viewport.name}: Pretext output is incomplete`);
     assert.deepEqual(pretextUsage.rewrappedLines, [], `${viewport.name}: Pretext lines wrapped again in the DOM`);
+
+    await frame.evaluate(() => window.postMessage({ type: 'mint-deck-go', id: 'c-ladder' }, location.origin));
+    await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '4 / 9');
+    const originalLadderRow = frame.locator('#c-ladder .ladder-tier-original');
+    const originalLadderTooltip = frame.locator('#ladder-t4-detail');
+    await originalLadderRow.hover();
+    await page.waitForTimeout(180);
+    assert.deepEqual(
+      await originalLadderTooltip.evaluate((element) => ({
+        opacity: getComputedStyle(element).opacity,
+        visibility: getComputedStyle(element).visibility
+      })),
+      { opacity: '1', visibility: 'visible' },
+      `${viewport.name}: full T4 row does not expose detail on hover`
+    );
+    await originalLadderRow.focus();
+    await page.waitForTimeout(180);
+    assert.deepEqual(
+      await originalLadderTooltip.evaluate((element) => ({
+        opacity: getComputedStyle(element).opacity,
+        visibility: getComputedStyle(element).visibility
+      })),
+      { opacity: '1', visibility: 'visible' },
+      `${viewport.name}: full T4 row does not expose detail on keyboard focus`
+    );
+
     await frame.evaluate(() => window.postMessage({ type: 'mint-deck-go', id: 'c-coherence' }, location.origin));
-    await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '3 / 10');
+    await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '3 / 9');
     assert.deepEqual(
       await coherenceCopyIssues(frame),
       [],
@@ -597,7 +712,7 @@ async function verifyViewport(browser, baseUrl, viewport) {
     }
 
     await frame.evaluate(() => window.postMessage({ type: 'mint-deck-go', id: 'c-comparison' }, location.origin));
-    await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '6 / 10');
+    await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '5 / 9');
     assert.deepEqual(
       await comparisonLayoutIssues(frame),
       [],
@@ -663,7 +778,7 @@ async function verifyViewport(browser, baseUrl, viewport) {
       `${viewport.name}: presentation comparison layout collision`
     );
     await frame.evaluate(() => window.postMessage({ type: 'mint-deck-go', id: 'c-results-models' }, location.origin));
-    await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '8 / 10');
+    await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '7 / 9');
     assert.deepEqual(
       await resultsModelLayoutIssues(frame),
       [],
@@ -675,7 +790,7 @@ async function verifyViewport(browser, baseUrl, viewport) {
       `${viewport.name}: presentation model-results typography drift`
     );
     await frame.evaluate(() => window.postMessage({ type: 'mint-deck-go', id: 'c-coherence' }, location.origin));
-    await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '3 / 10');
+    await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '3 / 9');
     assert.deepEqual(
       await coherenceCopyIssues(frame),
       [],
