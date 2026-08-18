@@ -278,6 +278,8 @@
       }
       pendingInitialId = null;
       updateStatus(event.data);
+    } else if (event.data?.type === 'mint-theme-toggle') {
+      applyTheme(document.documentElement.hasAttribute('data-theme') ? 'dark' : 'light', true);
     } else if (event.data?.type === 'mint-presentation-exit') {
       setPresentationMode(false);
     }

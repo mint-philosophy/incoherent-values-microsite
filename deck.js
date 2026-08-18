@@ -6,6 +6,8 @@ const PRETEXT_URLS = [
 const MIN_FIT_SCALE = 0.55;
 const FIT_ITERATIONS = 9;
 const FRAME_INSET = 2;
+const RESULTS_GROUPING_TWEEN_MS = 500;
+const RESULTS_GROUPING_ANIMATION_ID = 'strict-mono-reorder';
 
 const deck = document.getElementById('deck');
 const slides = Array.from(document.querySelectorAll('.editorial-slide'));
@@ -13,6 +15,15 @@ const previousButton = document.getElementById('deckPrev');
 const nextButton = document.getElementById('deckNext');
 const counter = document.getElementById('deckCounter');
 const slideName = document.getElementById('deckSlideName');
+const titleThemeToggle = document.getElementById('titleThemeToggle');
+const titleThemeToggleIcon = titleThemeToggle?.querySelector('.title-theme-toggle-icon');
+const titleThemeToggleLabel = titleThemeToggle?.querySelector('.title-theme-toggle-label');
+const resultsGroupingToggle = document.getElementById('resultsGroupingToggle');
+const strictMonoChart = document.getElementById('strictMonoChart');
+const strictMonoScoreOrder = strictMonoChart
+  ? Array.from(strictMonoChart.querySelectorAll('.strict-mono-row'))
+  : [];
+let strictMonoAnimations = [];
 
 const state = {
   index: 0,
@@ -512,8 +523,148 @@ function isEditingTarget(target) {
   return Boolean(target.closest('input, textarea, select, [contenteditable="true"]'));
 }
 
+function applyDeckTheme(theme) {
+  const isLight = theme === 'light';
+  if (isLight) document.documentElement.setAttribute('data-theme', 'light');
+  else document.documentElement.removeAttribute('data-theme');
+  if (titleThemeToggle) {
+    const actionLabel = isLight ? 'Dark mode' : 'Light mode';
+    const accessibleLabel = `Switch to ${isLight ? 'dark' : 'light'} mode`;
+    if (titleThemeToggleIcon) titleThemeToggleIcon.textContent = isLight ? '☾' : '☀';
+    if (titleThemeToggleLabel) titleThemeToggleLabel.textContent = actionLabel;
+    titleThemeToggle.setAttribute('aria-label', accessibleLabel);
+    titleThemeToggle.setAttribute('aria-pressed', String(!isLight));
+    titleThemeToggle.title = accessibleLabel;
+  }
+  scheduleFit();
+}
+
+function strictMonoScore(row) {
+  return Number.parseFloat(row.style.getPropertyValue('--value')) || 0;
+}
+
+function animateStrictMonoRows(firstRects, rows) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches || typeof Element.prototype.animate !== 'function') {
+    rows.forEach((row) => row.getAnimations().forEach((animation) => animation.cancel()));
+    strictMonoAnimations = [];
+    return;
+  }
+
+  const animations = rows.flatMap((row) => {
+    const first = firstRects.get(row);
+    const last = row.getBoundingClientRect();
+    if (!first) return [];
+    const deltaX = first.left - last.left;
+    const deltaY = first.top - last.top;
+    if (Math.abs(deltaX) < 0.5 && Math.abs(deltaY) < 0.5) return [];
+    const fitScale = Number.parseFloat(
+      row.closest('.slide-plane')?.style.getPropertyValue('--fit-scale')
+    ) || 1;
+    const animation = row.animate([
+      { transform: `translate(${deltaX / fitScale}px, ${deltaY / fitScale}px)` },
+      { transform: 'translate(0, 0)' }
+    ], {
+      duration: RESULTS_GROUPING_TWEEN_MS,
+      easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+      fill: 'both'
+    });
+    animation.id = RESULTS_GROUPING_ANIMATION_ID;
+    return [animation];
+  });
+
+  strictMonoAnimations = animations;
+  Promise.allSettled(animations.map((animation) => animation.finished)).then(() => {
+    if (strictMonoAnimations !== animations) return;
+    animations.forEach((animation) => animation.cancel());
+    strictMonoAnimations = [];
+    scheduleFit();
+  });
+}
+
+function setResultsGrouping(grouped) {
+  if (!resultsGroupingToggle || !strictMonoChart || !strictMonoScoreOrder.length) return;
+
+  const firstRects = new Map(strictMonoScoreOrder.map((row) => [row, row.getBoundingClientRect()]));
+  strictMonoScoreOrder.forEach((row) => {
+    row.getAnimations()
+      .filter((animation) => animation.id === RESULTS_GROUPING_ANIMATION_ID)
+      .forEach((animation) => animation.cancel());
+  });
+  strictMonoAnimations = [];
+
+  strictMonoScoreOrder.forEach((row) => {
+    row.classList.remove('strict-mono-group-start', 'strict-mono-group-end');
+  });
+
+  let orderedRows = strictMonoScoreOrder;
+  if (grouped) {
+    const groups = new Map();
+    strictMonoScoreOrder.forEach((row, originalIndex) => {
+      const model = row.querySelector('.strict-mono-model strong')?.textContent.trim() || `row-${originalIndex}`;
+      if (!groups.has(model)) groups.set(model, { model, rows: [], originalIndex });
+      groups.get(model).rows.push(row);
+    });
+
+    const orderedGroups = Array.from(groups.values())
+      .map((group) => ({
+        ...group,
+        topScore: Math.max(...group.rows.map(strictMonoScore))
+      }))
+      .sort((first, second) => second.topScore - first.topScore || first.originalIndex - second.originalIndex);
+
+    orderedRows = orderedGroups.flatMap((group) => {
+      const rows = group.rows.slice().sort((first, second) => {
+        const firstReasoningRank = first.classList.contains('reasoning-on') ? 0 : 1;
+        const secondReasoningRank = second.classList.contains('reasoning-on') ? 0 : 1;
+        return firstReasoningRank - secondReasoningRank
+          || strictMonoScoreOrder.indexOf(first) - strictMonoScoreOrder.indexOf(second);
+      });
+      rows[0]?.classList.add('strict-mono-group-start');
+      rows.at(-1)?.classList.add('strict-mono-group-end');
+      return rows;
+    });
+  }
+
+  strictMonoChart.replaceChildren(...orderedRows);
+  strictMonoChart.classList.toggle('is-grouped', grouped);
+  strictMonoChart.setAttribute(
+    'aria-label',
+    grouped
+      ? "Strict monotonicity percentages grouped by model and ranked by each model's highest score"
+      : 'Strict monotonicity percentages by model, ranked by score'
+  );
+  resultsGroupingToggle.setAttribute('aria-checked', String(grouped));
+
+  const resultsSlide = strictMonoChart.closest('.editorial-slide');
+  if (resultsSlide) {
+    const slideIndex = slides.indexOf(resultsSlide);
+    const diagnostic = fitSlide(resultsSlide);
+    if (slideIndex >= 0) window.__deckDiagnostics.slides[slideIndex] = diagnostic;
+  }
+  animateStrictMonoRows(firstRects, orderedRows);
+}
+
 previousButton.addEventListener('click', previousSlide);
 nextButton.addEventListener('click', nextSlide);
+
+resultsGroupingToggle?.addEventListener('click', () => {
+  setResultsGrouping(resultsGroupingToggle.getAttribute('aria-checked') !== 'true');
+});
+
+titleThemeToggle?.addEventListener('click', () => {
+  const nextTheme = document.documentElement.hasAttribute('data-theme') ? 'dark' : 'light';
+  if (window.parent !== window) {
+    window.parent.postMessage({ type: 'mint-theme-toggle' }, window.location.origin);
+    return;
+  }
+  applyDeckTheme(nextTheme);
+  try {
+    localStorage.setItem('mint-theme', nextTheme);
+    localStorage.setItem('mint-theme-explicit', 'true');
+  } catch (error) {
+    // Storage may be disabled; the standalone deck still updates.
+  }
+});
 
 document.addEventListener('click', (event) => {
   const anchor = event.target.closest('a[href^="#c-"]');
@@ -563,9 +714,7 @@ window.addEventListener('message', (event) => {
   } else if (event.data?.type === 'mint-presentation-resize') {
     scheduleFit();
   } else if (event.data?.type === 'mint-theme') {
-    if (event.data.theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
-    else document.documentElement.removeAttribute('data-theme');
-    scheduleFit();
+    applyDeckTheme(event.data.theme);
   }
 });
 
