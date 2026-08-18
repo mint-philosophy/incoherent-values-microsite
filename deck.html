@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="prototype.css?v=20260807-deck">
-  <link rel="stylesheet" href="deck.css?v=20260817.6">
-  <script type="module" src="deck.js?v=20260808.14"></script>
+  <link rel="stylesheet" href="deck.css?v=20260818.9">
+  <script type="module" src="deck.js?v=20260818.6"></script>
 </head>
 <body class="deck-page">
   <a class="skip-link" href="#c-title-slide">Skip to slides</a>
@@ -35,6 +35,10 @@
           <span class="title-next-cue-action">Next slide <span class="title-next-cue-arrow" aria-hidden="true">→</span></span>
           <span class="title-next-cue-help">(use arrow keys, or controls at bottom corners)</span>
         </a>
+        <button class="title-theme-toggle" id="titleThemeToggle" type="button" aria-label="Switch to dark mode" aria-pressed="false" title="Switch to dark mode">
+          <span class="title-theme-toggle-icon" aria-hidden="true">☾</span>
+          <span class="title-theme-toggle-label">Dark mode</span>
+        </button>
       </section>
 
       <section class="editorial-hero editorial-slide" id="c-overview" data-nav-label="Do Models Have Coherent Values?">
@@ -44,14 +48,14 @@
         </header>
         <div class="overview-coherence">
           <div class="editorial-copy slide-points">
-            <p data-point-icon="trust">To trust Large Language Models, we need to know how they will perform in novel situations.</p>
-            <p data-point-icon="values" data-pretext-native>Some (e.g. <a data-paper-link="mazeika-values" hidden>Mazeika et al.</a>) think that when LLMs make choices, they are (increasingly) guided by coherent <em>values</em>. If this is true, it could be crucial for trusting LLMs' behaviour in novel situations.</p>
+            <p data-point-icon="trust">To trust Large Language Models, we need to know how they will perform in novel situations. One way this could happen is if we discover that their choices are guided by coherent, stable values.</p>
+            <p data-point-icon="values" data-pretext-native>In a recent, highly influential experiment, <a data-paper-link="mazeika-values" hidden>Mazeika et al.</a> found that models behaviour appeared to be guided by surprisingly coherent values, emerging with scale.</p>
             <p data-point-icon="test">We introduce a new way of testing how coherent an LLM's values are. It shows that LLMs have some way to go to become fully coherent agents.</p>
           </div>
         </div>
 
         <aside class="model-headline-results" aria-labelledby="model-results-title">
-          <h3 class="model-chart-title" id="model-results-title">Results were surprising: LLMs both more coherent than one might expect given their training; but less coherent than the previous results from Mazeika et al. implied.</h3>
+          <h3 class="model-chart-title" id="model-results-title">Results were surprising: LLMs were both more coherent than one might expect given their training; but less coherent than the previous results from Mazeika et al. implied.</h3>
           <div class="model-result-chart mini-strict-mono-chart" role="table" aria-label="Selected highest and lowest strict-monotonicity results by model">
             <div class="model-result-chart-head" role="row"><span role="columnheader">Model</span><span role="columnheader">Strict monotonicity</span></div>
             <div class="model-result-row model-opus reasoning-on" role="row" style="--value: 80.1" aria-label="Opus-4.6, reasoning on, 80.1 percent">
@@ -128,7 +132,7 @@
         </header>
         <div class="ladder-merged-layout">
           <div class="editorial-copy slide-points ladder-method-copy">
-            <p data-point-icon="ladder" data-pretext-native>We took 100 options from Mazeika et al. and varied the parameter that makes the option more or less choiceworthy. This means that each option (T4) gives us three progressively worse options (T1-T3), and three progressively better ones (T5-7). These are our <span class="value-ladders-emphasis">'value ladders'</span>.</p>
+            <p data-point-icon="ladder" data-pretext-native>We took 100 options from Mazeika et al. and varied a single property that makes the option more or less choiceworthy to create what we call as <em class="value-ladders-emphasis">value ladders</em>, where <em>T = Tier</em>. This means that each option (T4) gives us three progressively worse options (T1-T3), and three progressively better ones (T5-T7).</p>
             <p data-point-icon="sequence">When pairs of options are compared within the ladder, their values should be ordered in this way.</p>
             <div class="tier-order-strip" role="img" tabindex="0" aria-label="Within-ladder ordering: T7 is preferred to T6, which is preferred to T5, T4, T3, T2, and T1">
               <div class="tier-order-item"><img src="assets/human-happiness-a-t7-128.png" alt=""><strong>T7</strong></div>
@@ -253,7 +257,7 @@
         <div class="editorial-copy slide-points">
           <p data-point-icon="compare">For a more robust test of value coherence, we compare the ladder options to fixed alternatives.</p>
           <p data-point-icon="trend">As we compare higher items on the ladder to the fixed alternative, the LLM's valuing of the ladder item should grow monotonically (not decrease).</p>
-          <p data-point-icon="cycle">Otherwise, the model exhibits an incoherent cycle of preferences, e.g. T4 &gt; T3 &gt; X &gt; T4.</p>
+          <p data-point-icon="cycle">Otherwise, the model exhibits an incoherent cycle of preferences, e.g. T4&gt;T3&gt;X&gt;T4, where X = the fixed alternative the tiers are being compared against.</p>
         </div>
       </section>
 
@@ -303,6 +307,12 @@
           <div class="editorial-copy slide-findings results-summary-copy">
             <p class="results-summary-lead" data-finding-label="Average">On average, LLMs' rankings were monotonic only 59.5% of the time.</p>
             <p class="results-reasoning-copy" data-finding-label="Reasoning">Turning on model 'reasoning' generally increased their score.</p>
+            <div class="results-grouping-control">
+              <button class="results-grouping-toggle" id="resultsGroupingToggle" type="button" role="switch" aria-checked="false" aria-controls="strictMonoChart">
+                <span>Group by reasoning on/off</span>
+                <i aria-hidden="true"></i>
+              </button>
+            </div>
             <p data-finding-label="Details">See the paper for more detailed measurements of value (in)coherence.</p>
           </div>
           <section class="strict-mono-card" aria-labelledby="strict-mono-title">
@@ -310,7 +320,7 @@
               <strong id="strict-mono-title">Strict monotonicity by model</strong>
             </div>
             <div class="strict-mono-scale" aria-hidden="true"><span>0</span><span>25</span><span>50</span><span>75</span><span>100%</span></div>
-            <div class="strict-mono-chart" role="table" aria-label="Strict monotonicity percentages by model">
+            <div class="strict-mono-chart" id="strictMonoChart" role="table" aria-label="Strict monotonicity percentages by model, ranked by score">
               <div class="strict-mono-row model-opus reasoning-on" role="row" style="--value: 80.1" aria-label="Opus-4.6, reasoning on, 80.1 percent"><div class="strict-mono-model" role="rowheader"><strong>Opus-4.6</strong></div><div class="strict-mono-track" aria-hidden="true"><i></i></div><span role="cell">80.1%</span></div>
               <div class="strict-mono-row model-glm-hybrid reasoning-off" role="row" style="--value: 79.5" aria-label="GLM-4.5-Hybrid, reasoning off, 79.5 percent"><div class="strict-mono-model" role="rowheader"><strong>GLM-4.5-Hybrid</strong></div><div class="strict-mono-track" aria-hidden="true"><i></i></div><span role="cell">79.5%</span></div>
               <div class="strict-mono-row model-opus reasoning-off" role="row" style="--value: 76" aria-label="Opus-4.6, reasoning off, 76 percent"><div class="strict-mono-model" role="rowheader"><strong>Opus-4.6</strong></div><div class="strict-mono-track" aria-hidden="true"><i></i></div><span role="cell">76.0%</span></div>

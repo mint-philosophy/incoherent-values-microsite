@@ -1,7 +1,7 @@
 # Visual QA - Incoherent Values?
 
-- Date: `2026-08-17` (merged value-ladder method and example)
-- Revision: `main` working tree (uncommitted)
+- Date: `2026-08-18` (copy revisions, title controls, and explainer alignment check)
+- Revision: feature-branch working tree (uncommitted)
 - Browser: headless Google Chrome via Playwright 1.62.1
 - Reviewer: `Minty-7c785f5b`
 
@@ -26,7 +26,7 @@ query based) sizes all type, icons, gutters, sprites, and chart geometry, so
 every slide reads at one apparent size at a given window and the fitter is
 only a safety net. At composed aspects (ultrawide, full-HD, desktop) every
 slide fits near scale `1.0` in composed desktop modes; the minimum framed
-scale across the whole matrix is `0.639` in the `360x640` case, and the minimum
+scale across the whole matrix is `0.625` in the `360x640` case, and the minimum
 presentation-mode scale is `0.625` in the medium-portrait cases.
 The QA script rejects any slide whose measured content escapes the iframe, any
 Pretext-managed block with horizontal overflow, any comparison chart that
@@ -57,13 +57,26 @@ as the unit (`min(1.85u, 5.2cqw)`), because at phone widths 1.85u set a
 Editorial paragraphs share the frame-derived unit size and 1.35 leading on
 every slide; the suite verifies that every point and findings row matches the
 deck-wide reference size at each viewport. The model-results summary uses
-three evenly ruled rows with JetBrains Mono labels; the suite verifies equal
-font size, leading, margins, padding, and row spacing in both framed and
-presentation modes.
+three consistently ruled rows with JetBrains Mono labels. A dedicated control
+band between the Reasoning and Details rows holds the reasoning-group switch;
+the suite verifies the finding typography and uninterrupted flow in both
+framed and presentation modes.
+
+The model chart defaults to descending score order. Its switch groups matching
+reasoning-on/off runs, orders each pair on then off, ranks model groups by their
+top score, and adds visible separation between groups. Automated checks verify
+the grouping, the restored score order, and slide containment at every viewport.
+Each row uses an interruptible 500ms position tween in both directions; the
+suite samples its start, midpoint, and destination. Reduced-motion mode skips
+the tween while preserving the same final ordering.
 
 The coherence explanation is tested as four Pretext-managed, evenly ruled rows
 with equal type, leading, margins, padding, and visible image-free markers. Its
 diagram, heading, and copy must remain collision-free at every viewport.
+The visual and explanatory-copy columns on the coherence and fixed-comparison
+slides share a vertical centerline within the content band rather than being
+pinned to its top edge; the suite asserts that alignment in framed and
+presentation modes.
 
 The value-ladder method and happiness example now share one composition. The
 method copy remains on the left at composed widths, the labelled seven-tier
@@ -98,7 +111,10 @@ animation without hiding information.
   from presentation mode are wired; arrow navigation is automated with focus in
   both the surrounding shell and the deck iframe.
 - [x] A fresh visit starts in light theme in both the shell and deck; switching
-  to dark and back updates both surfaces and the remembered preference.
+  from either the title-slide control or footer control updates both surfaces,
+  synchronizes both labels, and remembers the preference.
+- [x] The model-results grouping switch pairs reasoning-on/off runs, preserves
+  accessible state and chart labels, and restores score ranking when switched off.
 - [x] The external-link runtime exposes nine link instances backed by five
   explicitly approved config entries; every target returned HTTP 200.
 - [x] Pretext 0.0.8 loads, waits for fonts, lays out the eligible text blocks, and

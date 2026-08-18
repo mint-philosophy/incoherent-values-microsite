@@ -116,14 +116,19 @@ async function resultsModelLayoutIssues(frame) {
 async function resultsSummaryTypographyIssues(frame) {
   return frame.evaluate(() => {
     const summary = document.querySelector('#c-results-models .results-summary-copy');
-    const rows = summary ? Array.from(summary.children) : [];
-    if (!summary || rows.length !== 3) return ['model-results summary rows are missing'];
+    const rows = summary ? Array.from(summary.querySelectorAll(':scope > p[data-finding-label]')) : [];
+    const control = summary?.querySelector('.results-grouping-control');
+    const toggle = control?.querySelector('.results-grouping-toggle');
+    if (!summary || rows.length !== 3 || !control || !toggle) {
+      return ['model-results summary rows or grouping control are missing'];
+    }
 
     const expectedLabels = ['Average', 'Reasoning', 'Details'];
     const issues = [];
     const summaryStyle = getComputedStyle(summary);
     const styles = rows.map((row) => getComputedStyle(row));
-    const rects = rows.map((row) => row.getBoundingClientRect());
+    const flow = [rows[0], rows[1], control, rows[2]];
+    const rects = flow.map((element) => element.getBoundingClientRect());
     const pixelValue = (value) => Number.parseFloat(value) || 0;
     const nearlyEqual = (first, second, tolerance = 0.1) => Math.abs(first - second) <= tolerance;
 
@@ -159,8 +164,147 @@ async function resultsSummaryTypographyIssues(frame) {
 
     for (let index = 1; index < rects.length; index += 1) {
       if (!nearlyEqual(rects[index].top, rects[index - 1].bottom, 1)) {
-        issues.push(`row ${index + 1} does not meet the preceding rule`);
+        issues.push(`summary flow item ${index + 1} does not meet the preceding item`);
       }
+    }
+    if (toggle.getAttribute('role') !== 'switch') issues.push('grouping control is not exposed as a switch');
+    if (toggle.getAttribute('aria-checked') !== 'false') issues.push('grouping control does not default to score ranking');
+    return issues;
+  });
+}
+
+async function resultsGroupingIssues(frame) {
+  return frame.evaluate(async () => {
+    const toggle = document.getElementById('resultsGroupingToggle');
+    const chart = document.getElementById('strictMonoChart');
+    if (!toggle || !chart) return ['grouping switch or chart is missing'];
+
+    const issues = [];
+    const originalRows = Array.from(chart.querySelectorAll('.strict-mono-row'));
+    const originalOrder = originalRows.map((row) => row.getAttribute('aria-label'));
+    const waitForLayout = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const motionRow = originalRows.find((row) => (
+      row.classList.contains('model-glm-hybrid') && row.classList.contains('reasoning-on')
+    ));
+    const motionBefore = motionRow?.getBoundingClientRect();
+    const nearlyEqual = (first, second, tolerance = 1.5) => Math.abs(first - second) <= tolerance;
+    const motionSample = (row, animation, time) => {
+      animation.pause();
+      animation.currentTime = time;
+      const rect = row.getBoundingClientRect();
+      return { left: rect.left, top: rect.top };
+    };
+    const progressedBetween = (start, midpoint, end) => {
+      const axis = Math.abs(end.top - start.top) >= Math.abs(end.left - start.left) ? 'top' : 'left';
+      const minimum = Math.min(start[axis], end[axis]);
+      const maximum = Math.max(start[axis], end[axis]);
+      return midpoint[axis] > minimum + 0.5 && midpoint[axis] < maximum - 0.5;
+    };
+    const rowDetails = (row) => ({
+      model: row.querySelector('.strict-mono-model strong')?.textContent.trim(),
+      reasoning: row.classList.contains('reasoning-on') ? 'on' : 'off',
+      score: Number.parseFloat(row.style.getPropertyValue('--value')) || 0,
+      start: row.classList.contains('strict-mono-group-start')
+    });
+
+    toggle.click();
+    await waitForLayout();
+
+    const forwardAnimation = motionRow?.getAnimations().find((animation) => (
+      animation.id === 'strict-mono-reorder'
+      && Number(animation.effect?.getTiming().duration) === 500
+    ));
+    if (!motionRow || !motionBefore || !forwardAnimation) {
+      issues.push('grouping did not start a 0.5-second row tween');
+    } else {
+      const start = motionSample(motionRow, forwardAnimation, 0);
+      const midpoint = motionSample(motionRow, forwardAnimation, 250);
+      const end = motionSample(motionRow, forwardAnimation, 500);
+      if (!nearlyEqual(start.left, motionBefore.left) || !nearlyEqual(start.top, motionBefore.top)) {
+        issues.push('forward tween does not begin at the score-ranked position');
+      }
+      if (!progressedBetween(start, midpoint, end)) issues.push('forward tween does not pass through an intermediate position');
+    }
+    Array.from(chart.querySelectorAll('.strict-mono-row')).forEach((row) => {
+      row.getAnimations().forEach((animation) => animation.finish());
+    });
+    window.refitDeck();
+    await waitForLayout();
+
+    if (toggle.getAttribute('aria-checked') !== 'true') issues.push('grouping switch did not turn on');
+    if (!chart.classList.contains('is-grouped')) issues.push('chart did not enter grouped mode');
+    if (!chart.getAttribute('aria-label')?.includes('grouped by model')) issues.push('grouped chart label did not update');
+
+    const groupedRows = Array.from(chart.querySelectorAll('.strict-mono-row'));
+    const groups = [];
+    groupedRows.forEach((row) => {
+      const detail = rowDetails(row);
+      if (detail.start || groups.length === 0) groups.push([]);
+      groups.at(-1).push(detail);
+    });
+
+    const originalCounts = originalRows.reduce((counts, row) => {
+      const model = rowDetails(row).model;
+      counts.set(model, (counts.get(model) || 0) + 1);
+      return counts;
+    }, new Map());
+
+    groups.forEach((group, index) => {
+      if (new Set(group.map((row) => row.model)).size !== 1) {
+        issues.push(`group ${index + 1} contains multiple models`);
+      }
+      const expectedCount = originalCounts.get(group[0]?.model);
+      if (group.length !== expectedCount) issues.push(`${group[0]?.model} is split across groups`);
+      if (group.length === 2 && group.map((row) => row.reasoning).join('/') !== 'on/off') {
+        issues.push(`${group[0].model} is not ordered reasoning on/off`);
+      }
+    });
+
+    const topScores = groups.map((group) => Math.max(...group.map((row) => row.score)));
+    for (let index = 1; index < topScores.length; index += 1) {
+      if (topScores[index] > topScores[index - 1] + 0.01) {
+        issues.push('model groups are not ranked by their top score');
+        break;
+      }
+    }
+
+    const spacedStarts = groupedRows.filter((row, index) => index > 0 && row.classList.contains('strict-mono-group-start'));
+    if (spacedStarts.some((row) => (Number.parseFloat(getComputedStyle(row).marginTop) || 0) <= 0)) {
+      issues.push('model groups do not have added separation');
+    }
+
+    const diagnostic = window.__deckDiagnostics.slides.find((slide) => slide.id === 'c-results-models');
+    if (!diagnostic?.fits) issues.push('grouped chart does not fit its slide');
+
+    const groupedMotionPosition = motionRow?.getBoundingClientRect();
+    toggle.click();
+    await waitForLayout();
+    const reverseAnimation = motionRow?.getAnimations().find((animation) => (
+      animation.id === 'strict-mono-reorder'
+      && Number(animation.effect?.getTiming().duration) === 500
+    ));
+    if (!motionRow || !groupedMotionPosition || !reverseAnimation) {
+      issues.push('restoring score rank did not start a 0.5-second row tween');
+    } else {
+      const start = motionSample(motionRow, reverseAnimation, 0);
+      const midpoint = motionSample(motionRow, reverseAnimation, 250);
+      const end = motionSample(motionRow, reverseAnimation, 500);
+      if (!nearlyEqual(start.left, groupedMotionPosition.left) || !nearlyEqual(start.top, groupedMotionPosition.top)) {
+        issues.push('reverse tween does not begin at the grouped position');
+      }
+      if (!progressedBetween(start, midpoint, end)) issues.push('reverse tween does not pass through an intermediate position');
+    }
+    Array.from(chart.querySelectorAll('.strict-mono-row')).forEach((row) => {
+      row.getAnimations().forEach((animation) => animation.finish());
+    });
+    window.refitDeck();
+    await waitForLayout();
+    const restoredOrder = Array.from(chart.querySelectorAll('.strict-mono-row'))
+      .map((row) => row.getAttribute('aria-label'));
+    if (toggle.getAttribute('aria-checked') !== 'false') issues.push('grouping switch did not turn off');
+    if (chart.classList.contains('is-grouped')) issues.push('chart remained grouped after reset');
+    if (restoredOrder.some((label, index) => label !== originalOrder[index])) {
+      issues.push('score ranking was not restored');
     }
     return issues;
   });
@@ -258,11 +402,12 @@ async function coherenceCopyIssues(frame) {
     const slide = document.querySelector('#c-coherence');
     const plane = slide?.querySelector('.slide-plane');
     const heading = slide?.querySelector('.editorial-section-heading')?.getBoundingClientRect();
-    const diagram = slide?.querySelector('.coherence-cycle-diagram')?.getBoundingClientRect();
+    const diagramElement = slide?.querySelector('.coherence-cycle-diagram');
+    const diagram = diagramElement?.getBoundingClientRect();
     const copy = slide?.querySelector('.coherence-forced-choice-copy');
     const copyRect = copy?.getBoundingClientRect();
     const rows = copy ? Array.from(copy.children) : [];
-    if (!slide || !plane || !heading || !diagram || !copy || !copyRect || rows.length !== 4) {
+    if (!slide || !plane || !heading || !diagramElement || !diagram || !copy || !copyRect || rows.length !== 4) {
       return ['coherence slide elements or four copy rows are missing'];
     }
 
@@ -279,6 +424,15 @@ async function coherenceCopyIssues(frame) {
 
     if (overlaps(heading, diagram) || overlaps(heading, copyRect)) issues.push('coherence content overlaps its heading');
     if (overlaps(diagram, copyRect)) issues.push('coherence copy overlaps the diagram');
+    if (getComputedStyle(diagramElement).alignSelf !== 'center') issues.push('coherence diagram is not vertically centered');
+    if (getComputedStyle(copy).alignSelf !== 'center') issues.push('coherence copy is not vertically centered');
+    const sideBySide = diagram.right <= copyRect.left + 0.5 || copyRect.right <= diagram.left + 0.5;
+    const centerDifference = Math.abs(
+      ((diagram.top + diagram.bottom) / 2) - ((copyRect.top + copyRect.bottom) / 2),
+    );
+    if (sideBySide && centerDifference > 1) {
+      issues.push(`coherence visual and copy centers differ by ${centerDifference.toFixed(1)}px`);
+    }
     if (!nearlyEqual(pixelValue(getComputedStyle(copy).rowGap), 0)) issues.push('coherence rows use an arbitrary grid gap');
 
     const fontSize = pixelValue(styles[0].fontSize);
@@ -320,10 +474,12 @@ async function coherenceCopyIssues(frame) {
 
 async function comparisonLayoutIssues(frame) {
   return frame.evaluate(() => {
-    const visual = document.querySelector('#c-comparison .comparison-visual-stack')?.getBoundingClientRect();
+    const visualElement = document.querySelector('#c-comparison .comparison-visual-stack');
+    const visual = visualElement?.getBoundingClientRect();
     const chart = document.querySelector('#c-comparison .monotonicity-example-card')?.getBoundingClientRect();
-    const copy = document.querySelector('#c-comparison .editorial-copy')?.getBoundingClientRect();
-    if (!visual || !chart || !copy) return ['comparison elements are missing'];
+    const copyElement = document.querySelector('#c-comparison .editorial-copy');
+    const copy = copyElement?.getBoundingClientRect();
+    if (!visualElement || !visual || !chart || !copyElement || !copy) return ['comparison elements are missing'];
 
     const within = (child, parent) => child.left >= parent.left - 0.5
       && child.right <= parent.right + 0.5
@@ -337,6 +493,15 @@ async function comparisonLayoutIssues(frame) {
     const issues = [];
     if (!within(chart, visual)) issues.push('chart escapes visual stack');
     if (overlaps(chart, copy)) issues.push('chart overlaps explanatory copy');
+    if (getComputedStyle(visualElement).alignSelf !== 'center') issues.push('comparison visual is not vertically centered');
+    if (getComputedStyle(copyElement).alignSelf !== 'center') issues.push('comparison copy is not vertically centered');
+    const sideBySide = visual.right <= copy.left + 0.5 || copy.right <= visual.left + 0.5;
+    const centerDifference = Math.abs(
+      ((visual.top + visual.bottom) / 2) - ((copy.top + copy.bottom) / 2),
+    );
+    if (sideBySide && centerDifference > 1) {
+      issues.push(`comparison visual and copy centers differ by ${centerDifference.toFixed(1)}px`);
+    }
     return issues;
   });
 }
@@ -550,6 +715,11 @@ async function verifyViewport(browser, baseUrl, viewport) {
       [],
       `${viewport.name}: framed model-results typography drift`
     );
+    assert.deepEqual(
+      await resultsGroupingIssues(frame),
+      [],
+      `${viewport.name}: reasoning-group toggle drift`
+    );
     const rowOverlaps = await frame.locator('.active .strict-mono-row').evaluateAll((rows) => {
       const overlaps = (first, second) => !(
         first.right <= second.left + 0.5
@@ -663,9 +833,13 @@ async function verifyViewport(browser, baseUrl, viewport) {
       `${viewport.name}: deck did not inherit the light default`
     );
     assert.equal(await page.locator('#themeToggle').getAttribute('aria-label'), 'Switch to dark mode');
+    const titleThemeToggle = frame.locator('#titleThemeToggle');
+    assert.equal(await titleThemeToggle.getAttribute('aria-label'), 'Switch to dark mode');
+    assert.equal(await titleThemeToggle.getAttribute('aria-pressed'), 'false');
+    assert.equal((await titleThemeToggle.textContent()).replace(/\s+/g, ' ').trim(), '☾ Dark mode');
     assert.equal(await page.evaluate(() => localStorage.getItem('mint-theme')), null);
 
-    await page.evaluate(() => document.getElementById('themeToggle').click());
+    await frame.evaluate(() => document.getElementById('titleThemeToggle').click());
     await page.waitForFunction(() => !document.documentElement.hasAttribute('data-theme'));
     await page.waitForTimeout(300);
     const darkResult = await diagnostics(frame);
@@ -673,6 +847,10 @@ async function verifyViewport(browser, baseUrl, viewport) {
     assert.equal(await frame.evaluate(() => document.documentElement.hasAttribute('data-theme')), false);
     assert.equal(await page.evaluate(() => localStorage.getItem('mint-theme')), 'dark');
     assert.equal(await page.evaluate(() => localStorage.getItem('mint-theme-explicit')), 'true');
+    assert.equal(await page.locator('#themeToggle').getAttribute('aria-label'), 'Switch to light mode');
+    assert.equal(await titleThemeToggle.getAttribute('aria-label'), 'Switch to light mode');
+    assert.equal(await titleThemeToggle.getAttribute('aria-pressed'), 'true');
+    assert.equal((await titleThemeToggle.textContent()).replace(/\s+/g, ' ').trim(), '☀ Light mode');
 
     await page.evaluate(() => document.getElementById('themeToggle').click());
     await page.waitForFunction(() => document.documentElement.getAttribute('data-theme') === 'light');
@@ -681,6 +859,9 @@ async function verifyViewport(browser, baseUrl, viewport) {
     assert.deepEqual(lightResult.slides.filter((slide) => !slide.fits), [], `${viewport.name}: light-theme slide overflow`);
     assert.equal(await frame.evaluate(() => document.documentElement.getAttribute('data-theme')), 'light');
     assert.equal(await page.evaluate(() => localStorage.getItem('mint-theme')), 'light');
+    assert.equal(await titleThemeToggle.getAttribute('aria-label'), 'Switch to dark mode');
+    assert.equal(await titleThemeToggle.getAttribute('aria-pressed'), 'false');
+    assert.equal((await titleThemeToggle.textContent()).replace(/\s+/g, ' ').trim(), '☾ Dark mode');
 
     if (viewport.width > 900) {
       await page.locator('#sidebarToggle').click();
@@ -762,6 +943,39 @@ async function verifyViewport(browser, baseUrl, viewport) {
       })).sort((first, second) => second.opacity - first.opacity)[0].label;
     });
     assert.equal(reducedMotionLabel, 'T4', `${viewport.name}: reduced motion did not preserve the static comparison`);
+
+    await frame.evaluate(() => window.postMessage({ type: 'mint-deck-go', id: 'c-results-models' }, location.origin));
+    await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '7 / 9');
+    const reducedGroupingMotion = await frame.evaluate(async () => {
+      const toggle = document.getElementById('resultsGroupingToggle');
+      const chart = document.getElementById('strictMonoChart');
+      const settle = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      toggle.click();
+      await settle();
+      const animations = Array.from(chart.querySelectorAll('.strict-mono-row'))
+        .flatMap((row) => row.getAnimations());
+      const rowAnimations = animations.filter((animation) => (
+        animation.id === 'strict-mono-reorder'
+        && animation.playState !== 'finished'
+        && animation.playState !== 'idle'
+      )).length;
+      const grouped = toggle.getAttribute('aria-checked') === 'true';
+      toggle.click();
+      await settle();
+      window.refitDeck();
+      return {
+        grouped,
+        rowAnimations,
+        restored: toggle.getAttribute('aria-checked') === 'false'
+      };
+    });
+    assert.deepEqual(
+      reducedGroupingMotion,
+      { grouped: true, rowAnimations: 0, restored: true },
+      `${viewport.name}: reduced motion did not make chart regrouping instantaneous`
+    );
+    await frame.evaluate(() => window.postMessage({ type: 'mint-deck-go', id: 'c-comparison' }, location.origin));
+    await frame.waitForFunction(() => document.getElementById('deckCounter').textContent === '5 / 9');
 
     await page.locator('#presentationModeToggle').click();
     await page.waitForFunction(() => document.body.classList.contains('presentation-mode'));
